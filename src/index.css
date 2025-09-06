@@ -50,19 +50,9 @@
 	--sidebar-ring: oklch(0.709 0.01 56.259);
 }
 
-a {
-	font-weight: 500;
-	color: #646cff;
-	text-decoration: inherit;
-}
-a:hover {
-	color: #535bf2;
-}
-
+/* Removed problematic body styles */
 body {
 	margin: 0;
-	display: flex;
-	place-items: center;
 	min-width: 320px;
 	min-height: 100vh;
 }
@@ -95,9 +85,6 @@ button:focus-visible {
 	:root {
 		color: #213547;
 		background-color: #ffffff;
-	}
-	a:hover {
-		color: #747bff;
 	}
 	button {
 		background-color: #f9f9f9;
@@ -177,10 +164,10 @@ button:focus-visible {
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
+	* {
+		@apply border-border outline-ring/50;
 	}
-  body {
-    @apply bg-background text-foreground;
+	body {
+		@apply bg-background text-foreground;
 	}
 }
