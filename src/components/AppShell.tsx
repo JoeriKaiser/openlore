@@ -12,9 +12,18 @@ const nav = [
 ];
 
 export function AppShell() {
-	const user = useAuthStore((s) => s.user);
-	const logout = useAuthStore((s) => s.logout);
+	const { user, logout, isLoading } = useAuthStore();
 	const navigate = useNavigate();
+
+	const handleLogout = async () => {
+		try {
+			await logout();
+			navigate("/login");
+		} catch (error) {
+			console.error("Logout failed:", error);
+			navigate("/login");
+		}
+	};
 
 	return (
 		<div className="grid min-h-dvh grid-rows-[auto_1fr_auto] md:grid-rows-1 md:grid-cols-[220px_1fr]">
@@ -46,19 +55,22 @@ export function AppShell() {
 					</nav>
 					<div className="mt-4 grid gap-2">
 						<div className="text-xs text-muted-foreground">
-							{user?.email ?? ""}
+							{user?.name && (
+								<div>
+									<div className="font-medium">{user.name}</div>
+									<div className="text-muted-foreground">{user.email}</div>
+								</div>
+							)}
 						</div>
 						<ThemeToggle />
 						<Button
 							variant="outline"
-							onClick={() => {
-								logout();
-								navigate("/login");
-							}}
+							onClick={handleLogout}
+							disabled={isLoading}
 							className="justify-start gap-2"
 						>
 							<LogOut className="h-4 w-4" />
-							Sign out
+							{isLoading ? "Signing out..." : "Sign out"}
 						</Button>
 					</div>
 				</div>
@@ -71,14 +83,12 @@ export function AppShell() {
 					<Button
 						size="sm"
 						variant="outline"
-						onClick={() => {
-							logout();
-							navigate("/login");
-						}}
+						onClick={handleLogout}
+						disabled={isLoading}
 						className="gap-2"
 					>
 						<LogOut className="h-4 w-4" />
-						Sign out
+						{isLoading ? "Signing out..." : "Sign out"}
 					</Button>
 				</div>
 			</header>

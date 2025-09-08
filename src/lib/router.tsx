@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
+import { useEffect } from "react";
 import {
 	BrowserRouter,
 	Navigate,
-	Outlet,
 	Route,
 	Routes,
 	useLocation,
@@ -20,17 +20,73 @@ import { LoreEditPage } from "@/features/lore/pages/LoreEdit";
 import { LoreListPage } from "@/features/lore/pages/LoreList";
 import { LoreViewPage } from "@/features/lore/pages/LoreView";
 
+function AuthInitializer({ children }: { children: ReactNode }) {
+	const { checkAuth, isInitialized } = useAuthStore();
+
+	useEffect(() => {
+		// Check authentication status on app startup
+		if (!isInitialized) {
+			checkAuth();
+		}
+	}, [checkAuth, isInitialized]);
+
+	return <>{children}</>;
+}
+
+function LoadingSpinner() {
+	return (
+		<div className="flex min-h-dvh items-center justify-center">
+			<div className="flex items-center gap-2">
+				<div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+				<div className="text-sm text-muted-foreground">Loading...</div>
+			</div>
+		</div>
+	);
+}
+
 function Protected({ children }: { children: ReactNode }) {
-	const user = useAuthStore((s) => s.user);
-	const loc = useLocation();
-	if (!user) return <Navigate to="/login" state={{ from: loc }} replace />;
+	const { token, isLoading, isInitialized } = useAuthStore();
+	const location = useLocation();
+
+	console.log("token", token);
+	console.log("isLoading", isLoading);
+	console.log("isInitialized", isInitialized);
+
+	// Show loading state while checking auth or during initialization
+	if (!isInitialized || isLoading) {
+		return <LoadingSpinner />;
+	}
+
+	// Redirect to login if not authenticated
+	if (!token) {
+		return <Navigate to="/login" state={{ from: location }} replace />;
+	}
+
+	return <>{children}</>;
+}
+
+function PublicOnly({ children }: { children: ReactNode }) {
+	const { token, isLoading, isInitialized } = useAuthStore();
+
+	// Show loading state while checking auth
+	if (!isInitialized || isLoading) {
+		return <LoadingSpinner />;
+	}
+
+	// Redirect to app if already authenticated
+	if (token) {
+		return <Navigate to="/app" replace />;
+	}
+
 	return <>{children}</>;
 }
 
 function Dashboard() {
+	const user = useAuthStore((s) => s.user);
+
 	return (
 		<div className="space-y-2 p-4">
-			<h1 className="text-xl font-semibold">Dashboard</h1>
+			<h1 className="text-xl font-semibold">Welcome back, {user?.name}!</h1>
 			<p className="text-sm text-muted-foreground">
 				Welcome to OpenLore. Start by creating a character or adding lore.
 			</p>
@@ -53,34 +109,54 @@ function ChatPage() {
 export function AppRouter() {
 	return (
 		<BrowserRouter>
-			<Routes>
-				<Route path="/login" element={<LoginPage />} />
-				<Route path="/register" element={<RegisterPage />} />
+			<AuthInitializer>
+				<Routes>
+					{/* Public routes - redirect to /app if authenticated */}
+					<Route
+						path="/login"
+						element={
+							<PublicOnly>
+								<LoginPage />
+							</PublicOnly>
+						}
+					/>
+					<Route
+						path="/register"
+						element={
+							<PublicOnly>
+								<RegisterPage />
+							</PublicOnly>
+						}
+					/>
 
-				<Route
-					path="/app"
-					element={
-						<Protected>
-							<AppShell />
-						</Protected>
-					}
-				>
-					<Route index element={<Dashboard />} />
-					<Route path="chat" element={<ChatPage />} />
+					{/* Protected routes - require authentication */}
+					<Route
+						path="/app"
+						element={
+							<Protected>
+								<AppShell />
+							</Protected>
+						}
+					>
+						<Route index element={<Dashboard />} />
+						<Route path="chat" element={<ChatPage />} />
 
-					<Route path="lore" element={<LoreListPage />} />
-					<Route path="lore/new" element={<LoreCreatePage />} />
-					<Route path="lore/:id" element={<LoreViewPage />} />
-					<Route path="lore/:id/edit" element={<LoreEditPage />} />
+						<Route path="lore" element={<LoreListPage />} />
+						<Route path="lore/new" element={<LoreCreatePage />} />
+						<Route path="lore/:id" element={<LoreViewPage />} />
+						<Route path="lore/:id/edit" element={<LoreEditPage />} />
 
-					<Route path="characters" element={<CharacterListPage />} />
-					<Route path="characters/new" element={<CharacterCreatePage />} />
-					<Route path="characters/:id" element={<CharacterViewPage />} />
-					<Route path="characters/:id/edit" element={<CharacterEditPage />} />
-				</Route>
+						<Route path="characters" element={<CharacterListPage />} />
+						<Route path="characters/new" element={<CharacterCreatePage />} />
+						<Route path="characters/:id" element={<CharacterViewPage />} />
+						<Route path="characters/:id/edit" element={<CharacterEditPage />} />
+					</Route>
 
-				<Route path="*" element={<Navigate to="/app" replace />} />
-			</Routes>
+					{/* Redirect root to /app */}
+					<Route path="/" element={<Navigate to="/app" replace />} />
+					<Route path="*" element={<Navigate to="/app" replace />} />
+				</Routes>
+			</AuthInitializer>
 		</BrowserRouter>
 	);
 }
