@@ -48,7 +48,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 	register: async ({ email, name, password }) => {
 		set({ isLoading: true, error: null });
 		try {
-			const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+			const response = await fetch(`${API_BASE_URL}/auth/register`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -77,7 +77,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 	login: async ({ email, password }) => {
 		set({ isLoading: true, error: null });
 		try {
-			const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+			const response = await fetch(`${API_BASE_URL}/auth/login`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -105,7 +105,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 	logout: async () => {
 		set({ isLoading: true, error: null });
 		try {
-			await fetch(`${API_BASE_URL}/api/auth/logout`, {
+			await fetch(`${API_BASE_URL}/auth/logout`, {
 				method: "POST",
 				credentials: "include",
 			});
@@ -124,7 +124,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 		set({ error: null });
 
 		try {
-			const response = await fetch(`${API_BASE_URL}/api/auth/session`, {
+			const response = await fetch(`${API_BASE_URL}/auth/session`, {
 				method: "GET",
 				credentials: "include",
 			});
