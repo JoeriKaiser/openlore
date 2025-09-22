@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 import { useEffect } from "react";
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import {
+	BrowserRouter,
+	Navigate,
+	Route,
+	Routes,
+	useLocation,
+} from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
 import { LoginPage } from "@/features/auth/pages/Login";
 import { RegisterPage } from "@/features/auth/pages/Register";
@@ -15,115 +21,116 @@ import { LoreListPage } from "@/features/lore/pages/LoreList";
 import { LoreViewPage } from "@/features/lore/pages/LoreView";
 
 function AuthInitializer({ children }: { children: ReactNode }) {
-  const { checkAuth, isInitialized } = useAuthStore();
-  useEffect(() => {
-    if (!isInitialized) {
-      checkAuth();
-    }
-  }, [checkAuth, isInitialized]);
-  return <>{children}</>;
+	const { checkAuth, isInitialized } = useAuthStore();
+	useEffect(() => {
+		if (!isInitialized) {
+			checkAuth();
+		}
+	}, [checkAuth, isInitialized]);
+	return <>{children}</>;
 }
 
 function LoadingSpinner() {
-  return (
-    <div className="flex min-h-dvh items-center justify-center">
-      <div className="flex items-center gap-2">
-        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
-        <div className="text-sm text-muted-foreground">Loading...</div>
-      </div>
-    </div>
-  );
+	return (
+		<div className="flex min-h-dvh items-center justify-center">
+			<div className="flex items-center gap-2">
+				<div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+				<div className="text-sm text-muted-foreground">Loading...</div>
+			</div>
+		</div>
+	);
 }
 
 function Protected({ children }: { children: ReactNode }) {
-  const { user, isLoading, isInitialized } = useAuthStore();
-  const location = useLocation();
-  if (!isInitialized || isLoading) {
-    return <LoadingSpinner />;
-  }
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-  return <>{children}</>;
+	const { user, isLoading, isInitialized } = useAuthStore();
+	const location = useLocation();
+	if (!isInitialized || isLoading) {
+		return <LoadingSpinner />;
+	}
+	if (!user) {
+		return <Navigate to="/login" state={{ from: location }} replace />;
+	}
+	return <>{children}</>;
 }
 
 function PublicOnly({ children }: { children: ReactNode }) {
-  const { user, isLoading, isInitialized } = useAuthStore();
-  if (!isInitialized || isLoading) {
-    return <LoadingSpinner />;
-  }
-  if (user) {
-    return <Navigate to="/app" replace />;
-  }
-  return <>{children}</>;
+	const { user, isLoading, isInitialized } = useAuthStore();
+	if (!isInitialized || isLoading) {
+		return <LoadingSpinner />;
+	}
+	if (user) {
+		return <Navigate to="/app" replace />;
+	}
+	return <>{children}</>;
 }
 
 function Dashboard() {
-  return (
-    <div className="space-y-2 p-4">
-      <h1 className="text-xl font-semibold">Welcome back</h1>
-      <p className="text-sm text-muted-foreground">
-        Welcome to OpenLore. Start by creating a character or adding lore.
-      </p>
-    </div>
-  );
+	return (
+		<div className="space-y-2 p-4">
+			<h1 className="text-xl font-semibold">Welcome back</h1>
+			<p className="text-sm text-muted-foreground">
+				Welcome to OpenLore. Start by creating a character or adding lore.
+			</p>
+		</div>
+	);
 }
 
 function ChatPage() {
-  return (
-    <div className="p-4">
-      <h1 className="text-xl font-semibold">Chat (MVP stub)</h1>
-      <p className="text-sm text-muted-foreground">
-        Hook up your LLM provider later. This page will render a chat UI and integrate your RAG pipeline.
-      </p>
-    </div>
-  );
+	return (
+		<div className="p-4">
+			<h1 className="text-xl font-semibold">Chat (MVP stub)</h1>
+			<p className="text-sm text-muted-foreground">
+				Hook up your LLM provider later. This page will render a chat UI and
+				integrate your RAG pipeline.
+			</p>
+		</div>
+	);
 }
 
 export function AppRouter() {
-  return (
-    <BrowserRouter>
-      <AuthInitializer>
-        <Routes>
-          <Route
-            path="/login"
-            element={
-              <PublicOnly>
-                <LoginPage />
-              </PublicOnly>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicOnly>
-                <RegisterPage />
-              </PublicOnly>
-            }
-          />
-          <Route
-            path="/app"
-            element={
-              <Protected>
-                <AppShell />
-              </Protected>
-            }
-          >
-            <Route index element={<Dashboard />} />
-            <Route path="chat" element={<ChatPage />} />
-            <Route path="lore" element={<LoreListPage />} />
-            <Route path="lore/new" element={<LoreCreatePage />} />
-            <Route path="lore/:id" element={<LoreViewPage />} />
-            <Route path="lore/:id/edit" element={<LoreEditPage />} />
-            <Route path="characters" element={<CharacterListPage />} />
-            <Route path="characters/new" element={<CharacterCreatePage />} />
-            <Route path="characters/:id" element={<CharacterViewPage />} />
-            <Route path="characters/:id/edit" element={<CharacterEditPage />} />
-          </Route>
-          <Route path="/" element={<Navigate to="/app" replace />} />
-          <Route path="*" element={<Navigate to="/app" replace />} />
-        </Routes>
-      </AuthInitializer>
-    </BrowserRouter>
-  );
+	return (
+		<BrowserRouter>
+			<AuthInitializer>
+				<Routes>
+					<Route
+						path="/login"
+						element={
+							<PublicOnly>
+								<LoginPage />
+							</PublicOnly>
+						}
+					/>
+					<Route
+						path="/register"
+						element={
+							<PublicOnly>
+								<RegisterPage />
+							</PublicOnly>
+						}
+					/>
+					<Route
+						path="/app"
+						element={
+							<Protected>
+								<AppShell />
+							</Protected>
+						}
+					>
+						<Route index element={<Dashboard />} />
+						<Route path="chat" element={<ChatPage />} />
+						<Route path="lore" element={<LoreListPage />} />
+						<Route path="lore/new" element={<LoreCreatePage />} />
+						<Route path="lore/:id" element={<LoreViewPage />} />
+						<Route path="lore/:id/edit" element={<LoreEditPage />} />
+						<Route path="characters" element={<CharacterListPage />} />
+						<Route path="characters/new" element={<CharacterCreatePage />} />
+						<Route path="characters/:id" element={<CharacterViewPage />} />
+						<Route path="characters/:id/edit" element={<CharacterEditPage />} />
+					</Route>
+					<Route path="/" element={<Navigate to="/app" replace />} />
+					<Route path="*" element={<Navigate to="/app" replace />} />
+				</Routes>
+			</AuthInitializer>
+		</BrowserRouter>
+	);
 }
