@@ -31,8 +31,6 @@ type AuthActions = {
 	setInitialized: () => void;
 };
 
-// Default to same-origin "/api" (works with the Vite proxy).
-// In production, set VITE_API_URL if your API is on a different origin.
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
@@ -67,7 +65,11 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 				throw new Error(data.error || "Registration failed");
 			}
 
-			set({ user: data.user, token: data.token, isLoading: false });
+			set({ 
+				user: data.user,
+				token: data.token, 
+				isLoading: false 
+			});
 		} catch (error: any) {
 			set({ error: error.message, isLoading: false });
 			throw error;
@@ -95,7 +97,11 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 				throw new Error(data.error || "Login failed");
 			}
 
-			set({ user: data.user, token: data.token, isLoading: false });
+			set({ 
+				user: data.user,
+				token: data.token, 
+				isLoading: false 
+			});
 		} catch (error: any) {
 			set({ error: error.message, isLoading: false });
 			throw error;
@@ -112,7 +118,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 		} catch (error) {
 			console.error("Logout request failed:", error);
 		} finally {
-			set({ user: null, isLoading: false });
+			set({ user: null, token: null, isLoading: false });
 		}
 	},
 
@@ -131,17 +137,30 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 
 			if (response.ok) {
 				const data = await response.json();
-				console.log("data", data);
-				if (data.token) {
+				console.log("Auth session data:", data);
+				
+				if (data.user) {
 					set({
+						user: data.user,
+						token: data.token || null,
+						isLoading: false,
+						isInitialized: true,
+					});
+				} else if (data.token) {
+					set({
+						user: null,
 						token: data.token,
 						isLoading: false,
 						isInitialized: true,
 					});
+					
+				} else {
+					throw new Error("No user or token in session response");
 				}
 			} else {
 				set({
 					user: null,
+					token: null,
 					isLoading: false,
 					isInitialized: true,
 				});
@@ -150,6 +169,7 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 			console.error("Auth check failed:", error);
 			set({
 				user: null,
+				token: null,
 				isLoading: false,
 				isInitialized: true,
 			});
