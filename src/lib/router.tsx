@@ -19,6 +19,8 @@ import { LoreCreatePage } from "@/features/lore/pages/LoreCreate";
 import { LoreEditPage } from "@/features/lore/pages/LoreEdit";
 import { LoreListPage } from "@/features/lore/pages/LoreList";
 import { LoreViewPage } from "@/features/lore/pages/LoreView";
+import { ChatPage } from "@/features/chat/pages/ChatPage";
+import { SettingsPage } from "@/features/settings/pages/SettingsPage";
 
 function AuthInitializer({ children }: { children: ReactNode }) {
 	const { checkAuth, isInitialized } = useAuthStore();
@@ -75,18 +77,6 @@ function Dashboard() {
 	);
 }
 
-function ChatPage() {
-	return (
-		<div className="p-4">
-			<h1 className="text-xl font-semibold">Chat (MVP stub)</h1>
-			<p className="text-sm text-muted-foreground">
-				Hook up your LLM provider later. This page will render a chat UI and
-				integrate your RAG pipeline.
-			</p>
-		</div>
-	);
-}
-
 export function AppRouter() {
 	return (
 		<BrowserRouter>
@@ -118,6 +108,7 @@ export function AppRouter() {
 					>
 						<Route index element={<Dashboard />} />
 						<Route path="chat" element={<ChatPage />} />
+						<Route path="settings" element={<SettingsPage />} />
 						<Route path="lore" element={<LoreListPage />} />
 						<Route path="lore/new" element={<LoreCreatePage />} />
 						<Route path="lore/:id" element={<LoreViewPage />} />

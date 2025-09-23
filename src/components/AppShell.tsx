@@ -1,5 +1,4 @@
-// src/components/AppShell.tsx
-import { Book, Bot, Home, LogOut, UsersRound } from "lucide-react";
+import { Book, Bot, Home, LogOut, Settings, UsersRound } from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/features/auth/store/auth";
@@ -10,6 +9,7 @@ const navigation = [
 	{ to: "/app/lore", label: "Lore", icon: Book },
 	{ to: "/app/characters", label: "Characters", icon: UsersRound },
 	{ to: "/app/chat", label: "Chat", icon: Bot },
+	{ to: "/app/settings", label: "Settings", icon: Settings },
 ];
 
 export function AppShell() {
@@ -27,13 +27,11 @@ export function AppShell() {
 
 	return (
 		<div className="flex min-h-screen bg-background">
-			{/* Desktop Sidebar */}
 			<aside className="hidden w-64 border-r bg-card lg:block">
 				<div className="flex h-full flex-col">
 					<div className="flex h-16 items-center border-b px-6">
 						<div className="text-lg font-semibold">OpenLore</div>
 					</div>
-
 					<nav className="flex-1 space-y-1 p-4">
 						{navigation.map((item) => {
 							const Icon = item.icon;
@@ -56,7 +54,6 @@ export function AppShell() {
 							);
 						})}
 					</nav>
-
 					<div className="border-t p-4">
 						<div className="mb-4 space-y-1">
 							{user?.name && (
@@ -83,8 +80,6 @@ export function AppShell() {
 					</div>
 				</div>
 			</aside>
-
-			{/* Mobile Header */}
 			<header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-background px-4 lg:hidden">
 				<div className="font-semibold">OpenLore</div>
 				<div className="flex items-center gap-2">
@@ -99,16 +94,12 @@ export function AppShell() {
 					</Button>
 				</div>
 			</header>
-
-			{/* Main Content */}
 			<main className="flex-1 lg:ml-0">
 				<div className="min-h-screen p-4 md:p-6 lg:p-8">
 					<Outlet />
 				</div>
 			</main>
-
-			{/* Mobile Navigation */}
-			<nav className="fixed bottom-0 z-40 grid w-full grid-cols-4 border-t bg-background lg:hidden">
+			<nav className="fixed bottom-0 z-40 grid w-full grid-cols-5 border-t bg-background lg:hidden">
 				{navigation.map((item) => {
 					const Icon = item.icon;
 					return (
