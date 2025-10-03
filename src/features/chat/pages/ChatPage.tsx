@@ -1,10 +1,10 @@
-// file: src/features/chat/pages/ChatPage.tsx
-import { useEffect, useMemo, useRef, useState } from "react";
+// Update your ChatPage.tsx
+
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { useChatUiStore } from "@/features/chat/state/useChatUiStore";
 import {
-	useModels,
 	useKeyStatus,
 	useChats,
 	useChatMessages,
@@ -20,126 +20,136 @@ import { queryKeys } from "@/lib/query-client";
 import type { Message } from "@/features/chat/types";
 import type { Character } from "@/features/characters/types";
 import type { Lore } from "@/features/lore/types";
+import { CURATED_MODELS, DEFAULT_MODEL } from "@/config/models";
 
-function draftKey(chatId: number | null) {
-	return chatId == null ? "new" : String(chatId);
-}
+const draftKey = (chatId: number | null) =>
+	chatId == null ? "new" : String(chatId);
 
 export function ChatPage() {
 	const qc = useQueryClient();
 
+	// Data queries - REMOVED useModels()
 	const { data: keyStatus } = useKeyStatus();
-	const { data: modelsData } = useModels();
 	const { data: chats = [], refetch: refetchChats } = useChats();
 	const { data: characters = [] } = useCharacters();
 	const { data: loreEntries = [] } = useLoreEntries();
 
+	// UI state from store
 	const selectedChatId = useChatUiStore((s) => s.selectedChatId);
 	const setSelectedChatId = useChatUiStore((s) => s.setSelectedChatId);
 	const showContext = useChatUiStore((s) => s.showContext);
 	const setShowContext = useChatUiStore((s) => s.setShowContext);
-
-	const currentDraftKey = draftKey(selectedChatId);
-	const draftValue = useChatUiStore(
-		(s) => s.inputDrafts[currentDraftKey] ?? "",
-	);
 	const setDraft = useChatUiStore((s) => s.setDraft);
 	const clearDraft = useChatUiStore((s) => s.clearDraft);
 
+	// Memoize draft key and value
+	const currentDraftKey = useMemo(
+		() => draftKey(selectedChatId),
+		[selectedChatId],
+	);
+	const draftValue = useChatUiStore(
+		(s) => s.inputDrafts[currentDraftKey] ?? "",
+	);
+
 	const { data: thread = [] } = useChatMessages(selectedChatId);
 
-	const [model, setModel] = useState<string>("");
+	// Local state
+	const [model, setModel] = useState<string>(DEFAULT_MODEL);
 	const [system, setSystem] = useState<string>("");
 	const [selectedCharacterId, setSelectedCharacterId] = useState<number | null>(
 		null,
 	);
 	const [selectedLoreIds, setSelectedLoreIds] = useState<number[]>([]);
-
 	const [search, setSearch] = useState("");
 	const [showSidebar, setShowSidebar] = useState(false);
-
 	const [isStreaming, setIsStreaming] = useState(false);
 	const [streamingText, setStreamingText] = useState("");
 	const [ephemeral, setEphemeral] = useState<Message[]>([]);
-
-	const cancelRef = useRef<null | { cancel: () => void }>(null);
-	const listRef = useRef<HTMLDivElement>(null);
 	const [atBottom, setAtBottom] = useState(true);
 
+	// Refs
+	const cancelRef = useRef<null | { cancel: () => void }>(null);
+	const listRef = useRef<HTMLDivElement>(null);
+
+	// Use curated models instead of API call
 	const modelOptions = useMemo(() => {
-		const list =
-			modelsData?.data?.map((m: any) => ({
-				id: m.id as string,
-				label: (m.name as string) || (m.id as string),
-			})) || [];
-		if (list.length === 0) {
-			return [{ id: "openai/gpt-4o-mini", label: "openai/gpt-4o-mini" }];
-		}
-		return list;
-	}, [modelsData]);
+		return CURATED_MODELS.map((m) => ({
+			id: m.id,
+			label: m.label,
+		}));
+	}, []);
 
-	useEffect(() => {
-		if (!model && modelOptions.length > 0) {
-			setModel(modelOptions[0].id);
-		}
-	}, [model, modelOptions]);
+	// Memoize current chat
+	const currentChat = useMemo(
+		() => chats.find((c: any) => c.id === selectedChatId),
+		[chats, selectedChatId],
+	);
 
-	useEffect(() => {
-		if (selectedChatId) {
-			const c = chats.find((x: any) => x.id === selectedChatId);
-			if (c) {
-				setModel(c.model);
-				setSelectedCharacterId(c.characterId ?? null);
-			}
+	// Memoize combined messages
+	const combinedMessages = useMemo(() => {
+		const arr = [...thread, ...ephemeral];
+		if (streamingText) {
+			arr.push({
+				id: -1,
+				role: "assistant",
+				content: streamingText,
+				createdAt: new Date().toISOString(),
+			});
 		}
-	}, [selectedChatId, chats]);
+		return arr;
+	}, [thread, ephemeral, streamingText]);
 
-	useEffect(() => {
+	// Memoize derived values
+	const keyExists = useMemo(() => !!keyStatus?.exists, [keyStatus]);
+	const disabled = useMemo(
+		() => !keyExists || isStreaming || !model,
+		[keyExists, isStreaming, model],
+	);
+
+	// Callbacks
+	const scrollToBottom = useCallback(() => {
 		const el = listRef.current;
-		if (!el || !atBottom) return;
+		if (!el) return;
 		el.scrollTop = el.scrollHeight;
-	}, [thread, ephemeral, streamingText, atBottom]);
+		setAtBottom(true);
+	}, []);
 
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			const k = e.key.toLowerCase();
-			if ((e.metaKey || e.ctrlKey) && k === "k") {
-				e.preventDefault();
-				setShowContext(!showContext);
-			}
-			if (k === "escape") {
-				if (isStreaming) {
-					cancelRef.current?.cancel();
-					setIsStreaming(false);
-					setStreamingText("");
-					setEphemeral([]);
-				} else if (showContext) {
-					setShowContext(false);
-				} else if (showSidebar) {
-					setShowSidebar(false);
-				}
-			}
-		};
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
-	}, [isStreaming, showContext, showSidebar, setShowContext]);
-
-	const handleScroll = () => {
+	const handleScroll = useCallback(() => {
 		const el = listRef.current;
 		if (!el) return;
 		const threshold = 32;
 		const nearBottom =
 			el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
 		setAtBottom(nearBottom);
-	};
+	}, []);
 
-	const scrollToBottom = () => {
-		const el = listRef.current;
-		if (!el) return;
-		el.scrollTop = el.scrollHeight;
-		setAtBottom(true);
-	};
+	const startNewChat = useCallback(() => {
+		setSelectedChatId(null);
+		setStreamingText("");
+		setEphemeral([]);
+		clearDraft(currentDraftKey);
+		setSystem("");
+		setSelectedCharacterId(null);
+		setSelectedLoreIds([]);
+	}, [setSelectedChatId, clearDraft, currentDraftKey]);
 
+	const stopStreaming = useCallback(() => {
+		cancelRef.current?.cancel();
+		setIsStreaming(false);
+		setStreamingText("");
+		setEphemeral([]);
+	}, []);
+
+	const handleSelectChat = useCallback(
+		(id: number) => {
+			setSelectedChatId(id);
+			setStreamingText("");
+			setEphemeral([]);
+		},
+		[setSelectedChatId],
+	);
+
+	// Mutations
 	const deleteChat = useMutation({
 		mutationFn: (id: number) => chatApi.delete(id),
 		onSuccess: async (_, id) => {
@@ -150,17 +160,53 @@ export function ChatPage() {
 		},
 	});
 
-	const startNewChat = () => {
-		setSelectedChatId(null);
-		setStreamingText("");
-		setEphemeral([]);
-		clearDraft(currentDraftKey);
-		setSystem("");
-		setSelectedCharacterId(null);
-		setSelectedLoreIds([]);
-	};
+	const handleDeleteChat = useCallback(() => {
+		if (!selectedChatId) return;
+		const ok = window.confirm("Delete this chat?");
+		if (ok) deleteChat.mutate(selectedChatId);
+	}, [selectedChatId, deleteChat]);
 
-	const handleSend = async () => {
+	// Sync chat settings
+	useEffect(() => {
+		if (selectedChatId && currentChat) {
+			// Validate model exists in curated list, otherwise use default
+			const modelExists = CURATED_MODELS.some(
+				(m) => m.id === currentChat.model,
+			);
+			setModel(modelExists ? currentChat.model : DEFAULT_MODEL);
+			setSelectedCharacterId(currentChat.characterId ?? null);
+		}
+	}, [selectedChatId, currentChat]);
+
+	// Auto-scroll
+	useEffect(() => {
+		if (!atBottom) return;
+		scrollToBottom();
+	}, [thread, ephemeral, streamingText, atBottom, scrollToBottom]);
+
+	// Keyboard shortcuts
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			const k = e.key.toLowerCase();
+			if ((e.metaKey || e.ctrlKey) && k === "k") {
+				e.preventDefault();
+				setShowContext(!showContext);
+			}
+			if (k === "escape") {
+				if (isStreaming) {
+					stopStreaming();
+				} else if (showContext) {
+					setShowContext(false);
+				} else if (showSidebar) {
+					setShowSidebar(false);
+				}
+			}
+		};
+		window.addEventListener("keydown", onKey);
+		return () => window.removeEventListener("keydown", onKey);
+	}, [isStreaming, showContext, showSidebar, setShowContext, stopStreaming]);
+
+	const handleSend = useCallback(async () => {
 		const content = (draftValue || "").trim();
 		if (!content || !model || isStreaming) return;
 
@@ -208,22 +254,23 @@ export function ChatPage() {
 				alert(err || "Streaming failed");
 			},
 		});
-	};
+	}, [
+		draftValue,
+		model,
+		isStreaming,
+		selectedChatId,
+		clearDraft,
+		currentDraftKey,
+		system,
+		selectedCharacterId,
+		selectedLoreIds,
+		refetchChats,
+		qc,
+		setSelectedChatId,
+		scrollToBottom,
+	]);
 
-	const combinedMessages = useMemo(() => {
-		const arr = [...thread, ...ephemeral];
-		if (streamingText) {
-			arr.push({
-				id: -1,
-				role: "assistant",
-				content: streamingText,
-				createdAt: new Date().toISOString(),
-			});
-		}
-		return arr;
-	}, [thread, ephemeral, streamingText]);
-
-	const handleSaveToLore = async () => {
+	const handleSaveToLore = useCallback(async () => {
 		if (!selectedChatId) {
 			alert("Open a saved chat first.");
 			return;
@@ -260,72 +307,78 @@ export function ChatPage() {
 		} catch (e: any) {
 			alert(e?.message || "Failed to save lore");
 		}
-	};
+	}, [selectedChatId, model, qc]);
 
-	const keyExists = !!keyStatus?.exists;
-	const disabled = !keyExists || isStreaming || !model;
-
-	const currentChat = useMemo(
-		() => chats.find((c: any) => c.id === selectedChatId),
-		[chats, selectedChatId],
-	);
-
-	const metaLeft = (
-		<>
-			{selectedCharacterId ? (
+	// Memoize meta sections
+	const metaLeft = useMemo(
+		() => (
+			<>
+				{selectedCharacterId ? (
+					<span className="rounded bg-muted px-2 py-1">
+						Character:{" "}
+						{
+							(characters as Character[]).find(
+								(c) => c.id === selectedCharacterId,
+							)?.name
+						}
+					</span>
+				) : (
+					<span className="rounded bg-muted px-2 py-1">No character</span>
+				)}
 				<span className="rounded bg-muted px-2 py-1">
-					Character:{" "}
-					{
-						(characters as Character[]).find(
-							(c) => c.id === selectedCharacterId,
-						)?.name
-					}
+					Lore: {selectedLoreIds.length}
 				</span>
-			) : (
-				<span className="rounded bg-muted px-2 py-1">No character</span>
-			)}
-			<span className="rounded bg-muted px-2 py-1">
-				Lore: {selectedLoreIds.length}
-			</span>
-			{system.trim() && (
-				<span className="rounded bg-muted px-2 py-1">System set</span>
-			)}
-		</>
+				{system.trim() && (
+					<span className="rounded bg-muted px-2 py-1">System set</span>
+				)}
+			</>
+		),
+		[selectedCharacterId, characters, selectedLoreIds.length, system],
 	);
 
-	const metaRight = (
-		<>
-			<select
-				className="w-full max-w-[260px] rounded-md border bg-background px-3 py-2 text-sm"
-				value={model}
-				onChange={(e) => setModel(e.target.value)}
-				disabled={isStreaming}
-				title="Model"
-			>
-				{modelOptions.map((m) => (
-					<option key={m.id} value={m.id}>
-						{m.label}
-					</option>
-				))}
-			</select>
-			<Button
-				variant="outline"
-				onClick={() => setShowContext(true)}
-				title="Conversation context"
-				className="ml-2"
-			>
-				Context
-			</Button>
-			<Button
-				variant="outline"
-				onClick={handleSaveToLore}
-				disabled={!selectedChatId || isStreaming}
-				title="Extract and save an important fact from this chat as lore"
-				className="ml-2"
-			>
-				Save to lore
-			</Button>
-		</>
+	const metaRight = useMemo(
+		() => (
+			<>
+				<select
+					className="w-full max-w-[260px] rounded-md border bg-background px-3 py-2 text-sm"
+					value={model}
+					onChange={(e) => setModel(e.target.value)}
+					disabled={isStreaming}
+					title="Model"
+				>
+					{modelOptions.map((m) => (
+						<option key={m.id} value={m.id}>
+							{m.label}
+						</option>
+					))}
+				</select>
+				<Button
+					variant="outline"
+					onClick={() => setShowContext(true)}
+					title="Conversation context"
+					className="ml-2"
+				>
+					Context
+				</Button>
+				<Button
+					variant="outline"
+					onClick={handleSaveToLore}
+					disabled={!selectedChatId || isStreaming}
+					title="Extract and save an important fact from this chat as lore"
+					className="ml-2"
+				>
+					Save to lore
+				</Button>
+			</>
+		),
+		[
+			model,
+			modelOptions,
+			isStreaming,
+			setShowContext,
+			handleSaveToLore,
+			selectedChatId,
+		],
 	);
 
 	return (
@@ -368,11 +421,7 @@ export function ChatPage() {
 					setShowSidebar={setShowSidebar}
 					keyExists={keyExists}
 					onNewChat={startNewChat}
-					onSelectChat={(id) => {
-						setSelectedChatId(id);
-						setStreamingText("");
-						setEphemeral([]);
-					}}
+					onSelectChat={handleSelectChat}
 					onDeleteChat={(id) => deleteChat.mutate(id)}
 					onOpenContext={() => setShowContext(true)}
 				/>
@@ -417,23 +466,11 @@ export function ChatPage() {
 						value={draftValue}
 						onChange={(v) => setDraft(currentDraftKey, v)}
 						onSend={handleSend}
-						onStop={() => {
-							cancelRef.current?.cancel();
-							setIsStreaming(false);
-							setStreamingText("");
-							setEphemeral([]);
-						}}
+						onStop={stopStreaming}
 						onNewChat={startNewChat}
-						onDeleteChat={
-							selectedChatId
-								? () => {
-										const ok = window.confirm("Delete this chat?");
-										if (ok) deleteChat.mutate(selectedChatId);
-									}
-								: undefined
-						}
+						onDeleteChat={selectedChatId ? handleDeleteChat : undefined}
 						isStreaming={isStreaming}
-						disabled={!keyExists || isStreaming || !model}
+						disabled={disabled}
 						selectedChatId={selectedChatId}
 						metaLeft={metaLeft}
 						metaRight={metaRight}

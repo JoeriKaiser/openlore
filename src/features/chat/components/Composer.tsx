@@ -31,7 +31,7 @@ export function Composer({
 	metaRight,
 }: Props) {
 	return (
-		<div className="border-t p-3 pb-[env(safe-area-inset-bottom)]">
+		<div className="border-t p-3 mb-2 pb-[env(safe-area-inset-bottom)]">
 			<div className="mx-auto w-full max-w-3xl">
 				{metaLeft && (
 					<div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
