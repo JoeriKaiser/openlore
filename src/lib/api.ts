@@ -2,6 +2,12 @@ import type { Lore } from "@/features/lore/types";
 import type { Character } from "@/features/characters/types";
 import type { Chat, Message } from "@/features/chat/types";
 
+type ExtractLoreResponse =
+	| { suggestion: { title: string; content: string } }
+	| {
+			saved: { id: number; title: string; content: string; createdAt: string };
+	  };
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 export class ApiError extends Error {
@@ -109,8 +115,21 @@ export const aiApi = {
 		}),
 	deleteKey: (): Promise<{ ok: boolean }> =>
 		fetchApi("/ai/providers/openrouter/key", { method: "DELETE" }),
-};
 
+	extractLore: (p: {
+		chatId: number;
+		messageId?: number | null;
+		model?: string | null;
+		maxMessages?: number | null;
+		save?: boolean;
+		title?: string | null;
+		content?: string | null;
+	}): Promise<ExtractLoreResponse> =>
+		fetchApi("/ai/extract-lore", {
+			method: "POST",
+			body: JSON.stringify(p),
+		}),
+};
 export const chatApi = {
 	list: (): Promise<Chat[]> => fetchApi("/chats"),
 	messages: (id: number): Promise<Message[]> =>
