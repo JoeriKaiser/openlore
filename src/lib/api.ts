@@ -1,239 +1,146 @@
-import type { Lore } from "@/features/lore/types";
-import type { Character } from "@/features/characters/types";
-import type { Chat, Message } from "@/features/chat/types";
+import type { Character, Chat, Lore, Message } from "@/types/entities";
+import { ApiError } from "@/types/api";
 
-type ExtractLoreResponse =
-	| { suggestion: { title: string; content: string } }
-	| {
-			saved: { id: number; title: string; content: string; createdAt: string };
-	  };
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...options.headers },
+    ...options,
+  });
 
-export class ApiError extends Error {
-	constructor(
-		public message: string,
-		public status: number,
-		public data?: any,
-	) {
-		super(message);
-		this.name = "ApiError";
-	}
+  if (res.status === 204) return undefined as T;
+
+  const data = res.headers.get("content-type")?.includes("application/json")
+    ? await res.json().catch(() => ({}))
+    : undefined;
+
+  if (!res.ok) throw new ApiError(data?.error || `HTTP ${res.status}`, res.status, data);
+
+  return data as T;
 }
 
-async function fetchApi<T>(
-	endpoint: string,
-	options: RequestInit = {},
-): Promise<T> {
-	const url = `${API_BASE_URL}${endpoint}`;
-	const headers: Record<string, string> = {
-		"Content-Type": "application/json",
-		...(options.headers as Record<string, string>),
-	};
+const api = {
+  get: <T>(url: string) => request<T>(url),
+  post: <T>(url: string, body: unknown) => request<T>(url, { method: "POST", body: JSON.stringify(body) }),
+  patch: <T>(url: string, body: unknown) => request<T>(url, { method: "PATCH", body: JSON.stringify(body) }),
+  delete: (url: string) => request<void>(url, { method: "DELETE" }),
+};
 
-	const response = await fetch(url, {
-		credentials: "include",
-		headers,
-		...options,
-	});
-
-	if (response.status === 204) {
-		return undefined as unknown as T;
-	}
-
-	const isJson = response.headers
-		.get("content-type")
-		?.includes("application/json");
-	const data = isJson ? await response.json().catch(() => ({})) : undefined;
-
-	if (!response.ok) {
-		throw new ApiError(
-			data?.error || `HTTP ${response.status}`,
-			response.status,
-			data,
-		);
-	}
-
-	return data as T;
+function createResource<T>(path: string) {
+  return {
+    list: () => api.get<T[]>(path),
+    get: (id: number | string) => api.get<T>(`${path}/${id}`),
+    create: (data: Partial<T>) => api.post<T>(path, data),
+    update: (id: number | string, data: Partial<T>) => api.patch<T>(`${path}/${id}`, data),
+    delete: (id: number | string) => api.delete(`${path}/${id}`),
+  };
 }
 
-export const loreApi = {
-	getAll: (): Promise<Lore[]> => fetchApi("/lore"),
-	getById: (id: string | number): Promise<Lore> => fetchApi(`/lore/${id}`),
-	create: (data: Pick<Lore, "title" | "content">): Promise<Lore> =>
-		fetchApi("/lore", { method: "POST", body: JSON.stringify(data) }),
-	update: (
-		id: string | number,
-		data: Partial<Pick<Lore, "title" | "content">>,
-	): Promise<Lore> =>
-		fetchApi(`/lore/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
-	delete: async (id: string | number): Promise<void> => {
-		await fetchApi(`/lore/${id}`, { method: "DELETE" });
-	},
-};
-
-export const charactersApi = {
-	getAll: (): Promise<Character[]> => fetchApi("/characters"),
-	getById: (id: string | number): Promise<Character> =>
-		fetchApi(`/characters/${id}`),
-	create: (data: Pick<Character, "name" | "bio">): Promise<Character> =>
-		fetchApi("/characters", { method: "POST", body: JSON.stringify(data) }),
-	update: (
-		id: string | number,
-		data: Partial<Pick<Character, "name" | "bio">>,
-	): Promise<Character> =>
-		fetchApi(`/characters/${id}`, {
-			method: "PATCH",
-			body: JSON.stringify(data),
-		}),
-	delete: async (id: string | number): Promise<void> => {
-		await fetchApi(`/characters/${id}`, { method: "DELETE" });
-	},
-};
+export const loreApi = createResource<Lore>("/lore");
+export const charactersApi = createResource<Character>("/characters");
 
 export const authApi = {
-	register: (body: { email: string; name: string; password: string }) =>
-		fetchApi("/auth/register", { method: "POST", body: JSON.stringify(body) }),
-	login: (body: { email: string; password: string }) =>
-		fetchApi("/auth/login", { method: "POST", body: JSON.stringify(body) }),
-	logout: () => fetchApi("/auth/logout", { method: "POST" }),
-	session: () => fetchApi("/auth/session"),
-};
-
-type ModelsResponse = {
-	data?: Array<{ id: string; name?: string }>;
+  register: (body: { email: string; name: string; password: string }) => api.post("/auth/register", body),
+  login: (body: { email: string; password: string }) => api.post("/auth/login", body),
+  logout: () => api.post("/auth/logout", {}),
+  session: () => api.get<{ user: { id: string; email: string; name: string } | null }>("/auth/session"),
 };
 
 export const aiApi = {
-	getModels: (): Promise<ModelsResponse> => fetchApi("/ai/models"),
-	getKeyStatus: (): Promise<{ exists: boolean; last4: string | null }> =>
-		fetchApi("/ai/providers/openrouter/key"),
-	setKey: (key: string): Promise<{ ok: boolean; last4: string | null }> =>
-		fetchApi("/ai/providers/openrouter/key", {
-			method: "POST",
-			body: JSON.stringify({ key }),
-		}),
-	deleteKey: (): Promise<{ ok: boolean }> =>
-		fetchApi("/ai/providers/openrouter/key", { method: "DELETE" }),
-
-	extractLore: (p: {
-		chatId: number;
-		messageId?: number | null;
-		model?: string | null;
-		maxMessages?: number | null;
-		save?: boolean;
-		title?: string | null;
-		content?: string | null;
-	}): Promise<ExtractLoreResponse> =>
-		fetchApi("/ai/extract-lore", {
-			method: "POST",
-			body: JSON.stringify(p),
-		}),
+  getModels: () => api.get<{ data?: Array<{ id: string; name?: string }> }>("/ai/models"),
+  getKeyStatus: () => api.get<{ exists: boolean; last4: string | null }>("/ai/providers/openrouter/key"),
+  setKey: (key: string) => api.post<{ ok: boolean; last4: string | null }>("/ai/providers/openrouter/key", { key }),
+  deleteKey: () => api.delete("/ai/providers/openrouter/key"),
+  extractLore: (params: {
+    chatId: number;
+    model?: string;
+    save?: boolean;
+    title?: string;
+    content?: string;
+  }) => api.post<{ suggestion?: { title: string; content: string }; saved?: Lore }>("/ai/extract-lore", params),
 };
+
 export const chatApi = {
-	list: (): Promise<Chat[]> => fetchApi("/chats"),
-	messages: (id: number): Promise<Message[]> =>
-		fetchApi(`/chats/${id}/messages`),
-	update: (id: number, patch: { title?: string; model?: string }) =>
-		fetchApi(`/chats/${id}`, { method: "PATCH", body: JSON.stringify(patch) }),
-	delete: (id: number) => fetchApi(`/chats/${id}`, { method: "DELETE" }),
-	stream: (params: {
-		chatId?: number;
-		model: string;
-		message: string;
-		system?: string | null;
-		characterId?: number | null;
-		loreIds?: number[] | null;
-		title?: string | null;
-		onChunk?: (delta: string) => void;
-		onDone?: (data: {
-			chatId: number;
-			messageId: number | null;
-			preview: string;
-		}) => void;
-		onError?: (err: string) => void;
-	}) => {
-		const controller = new AbortController();
-		const url = `${API_BASE_URL}/chat/stream`;
+  list: () => api.get<Chat[]>("/chats"),
+  messages: (id: number) => api.get<Message[]>(`/chats/${id}/messages`),
+  update: (id: number, data: Partial<Chat>) => api.patch<Chat>(`/chats/${id}`, data),
+  delete: (id: number) => api.delete(`/chats/${id}`),
+  stream: (params: {
+    chatId?: number;
+    model: string;
+    message: string;
+    system?: string;
+    characterId?: number;
+    loreIds?: number[];
+    onChunk?: (delta: string) => void;
+    onDone?: (data: { chatId: number; messageId: number | null; preview: string }) => void;
+    onError?: (err: string) => void;
+  }) => {
+    const controller = new AbortController();
 
-		const run = async () => {
-			try {
-				const res = await fetch(url, {
-					method: "POST",
-					credentials: "include",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						chatId: params.chatId,
-						model: params.model,
-						message: params.message,
-						system: params.system ?? null,
-						characterId: params.characterId ?? null,
-						loreIds: params.loreIds ?? null,
-						title: params.title ?? null,
-					}),
-					signal: controller.signal,
-				});
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/chat/stream`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chatId: params.chatId,
+            model: params.model,
+            message: params.message,
+            system: params.system ?? null,
+            characterId: params.characterId ?? null,
+            loreIds: params.loreIds ?? null,
+          }),
+          signal: controller.signal,
+        });
 
-				if (!res.ok || !res.body) {
-					const text = await res.text().catch(() => "");
-					params.onError?.(text || res.statusText);
-					return;
-				}
+        if (!res.ok || !res.body) {
+          params.onError?.(await res.text().catch(() => res.statusText));
+          return;
+        }
 
-				const reader = res.body.getReader();
-				const decoder = new TextDecoder();
-				let buffer = "";
-				let eventName: string | null = null;
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
 
-				while (true) {
-					const { done, value } = await reader.read();
-					if (done) break;
-					buffer += decoder.decode(value, { stream: true });
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
 
-					const events = buffer.split("\n\n");
-					buffer = events.pop() ?? "";
+          const events = buffer.split("\n\n");
+          buffer = events.pop() ?? "";
 
-					for (const evt of events) {
-						const lines = evt.split("\n");
-						eventName = null;
-						let dataLine: string | null = null;
-						for (const line of lines) {
-							const t = line.trim();
-							if (!t) continue;
-							if (t.startsWith("event:")) {
-								eventName = t.slice(6).trim();
-							} else if (t.startsWith("data:")) {
-								dataLine = t.slice(5).trim();
-							}
-						}
-						if (!dataLine) continue;
-						if (dataLine === "[DONE]") {
-							continue;
-						}
-						try {
-							const obj = JSON.parse(dataLine);
-							if (eventName === "chunk") {
-								const delta = obj?.delta ?? "";
-								if (delta) params.onChunk?.(delta);
-							} else if (eventName === "done") {
-								params.onDone?.(obj);
-							} else if (eventName === "error") {
-								const msg = obj?.message ?? "stream error";
-								params.onError?.(msg);
-							}
-						} catch {}
-					}
-				}
-			} catch (e: any) {
-				if (e?.name === "AbortError") return;
-				params.onError?.(e?.message || "stream failed");
-			}
-		};
+          for (const evt of events) {
+            let eventName: string | null = null;
+            let dataLine: string | null = null;
 
-		run();
+            for (const line of evt.split("\n")) {
+              const t = line.trim();
+              if (t.startsWith("event:")) eventName = t.slice(6).trim();
+              else if (t.startsWith("data:")) dataLine = t.slice(5).trim();
+            }
 
-		return {
-			cancel: () => controller.abort(),
-		};
-	},
+            if (!dataLine || dataLine === "[DONE]") continue;
+
+            try {
+              const obj = JSON.parse(dataLine);
+              if (eventName === "chunk" && obj?.delta) params.onChunk?.(obj.delta);
+              else if (eventName === "done") params.onDone?.(obj);
+              else if (eventName === "error") params.onError?.(obj?.message ?? "Stream error");
+            } catch {}
+          }
+        }
+      } catch (e) {
+        if ((e as Error)?.name !== "AbortError") params.onError?.((e as Error)?.message || "Stream failed");
+      }
+    })();
+
+    return { cancel: () => controller.abort() };
+  },
 };
+
+export { ApiError };

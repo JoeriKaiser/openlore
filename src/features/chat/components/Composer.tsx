@@ -2,80 +2,45 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 type Props = {
-	value: string;
-	onChange: (v: string) => void;
-	onSend: () => void;
-	onStop: () => void;
-	onNewChat: () => void;
-	onDeleteChat?: () => void;
-
-	isStreaming: boolean;
-	disabled: boolean;
-	selectedChatId: number | null;
-
-	metaLeft?: React.ReactNode;
-	metaRight?: React.ReactNode;
+  value: string;
+  onChange: (v: string) => void;
+  onSend: () => void;
+  onStop: () => void;
+  isStreaming: boolean;
+  disabled: boolean;
 };
 
-export function Composer({
-	value,
-	onChange,
-	onSend,
-	onStop,
-	onNewChat,
-	onDeleteChat,
-	isStreaming,
-	disabled,
-	selectedChatId,
-	metaLeft,
-	metaRight,
-}: Props) {
-	return (
-		<div className="border-t p-3 mb-2 pb-[env(safe-area-inset-bottom)]">
-			<div className="mx-auto w-full max-w-3xl">
-				{metaLeft && (
-					<div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
-						{metaLeft}
-					</div>
-				)}
+export function Composer({ value, onChange, onSend, onStop, isStreaming, disabled }: Props) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    }
+  };
 
-				<div className="grid grid-cols-1 gap-2">
-					<Textarea
-						rows={3}
-						placeholder="Type your message…"
-						value={value}
-						onChange={(e) => onChange(e.target.value)}
-						onKeyDown={(e) => {
-							if (e.key === "Enter" && !e.shiftKey) {
-								e.preventDefault();
-								onSend();
-							}
-						}}
-						disabled={disabled}
-					/>
-					<div className="flex items-center gap-2">
-						<Button onClick={onSend} disabled={disabled}>
-							{isStreaming ? "Streaming…" : "Send"}
-						</Button>
-						{isStreaming && (
-							<Button variant="outline" onClick={onStop}>
-								Stop
-							</Button>
-						)}
-						<Button variant="outline" onClick={onNewChat}>
-							New chat
-						</Button>
-						{selectedChatId && onDeleteChat && (
-							<Button variant="outline" onClick={onDeleteChat}>
-								Delete chat
-							</Button>
-						)}
-						{metaRight && (
-							<div className="ml-auto hidden md:flex">{metaRight}</div>
-						)}
-					</div>
-				</div>
-			</div>
-		</div>
-	);
+  return (
+    <div className="border-t p-3 pb-[env(safe-area-inset-bottom)]">
+      <div className="mx-auto max-w-3xl flex gap-2">
+        <Textarea
+          rows={2}
+          placeholder="Type a message..."
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+          className="min-h-[60px] resize-none"
+        />
+        <div className="flex flex-col gap-2">
+          <Button onClick={onSend} disabled={disabled || !value.trim()}>
+            {isStreaming ? "..." : "Send"}
+          </Button>
+          {isStreaming && (
+            <Button variant="outline" onClick={onStop}>
+              Stop
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
 }

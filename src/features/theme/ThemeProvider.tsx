@@ -1,17 +1,9 @@
-import { type ReactNode, useEffect } from "react";
-import { useThemeStore } from "@/features/theme/store/theme";
+import type { ReactNode } from "react";
+import { useEffect } from "react";
+import { useThemeStore } from "./store/theme";
 
-interface ThemeProviderProps {
-	children: ReactNode;
-}
-
-export function ThemeProvider({ children }: ThemeProviderProps) {
-	const { theme, setTheme } = useThemeStore();
-
-	useEffect(() => {
-		// Initialize theme on mount
-		setTheme(theme);
-	}, [theme, setTheme]);
-
-	return <>{children}</>;
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const { theme, setTheme } = useThemeStore();
+  useEffect(() => setTheme(theme), [theme, setTheme]);
+  return <>{children}</>;
 }

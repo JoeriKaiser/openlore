@@ -84,9 +84,9 @@ export const CURATED_MODELS: ModelOption[] = [
 
 	// Mistral
 	{
-		id: "mistralai/mistral-large",
-		label: "Mistral Large",
-		description: "Flagship Mistral model",
+		id: "mistralai/ministral-8b-2512",
+		label: "Mistral: Ministral 3 8B 2512",
+		description: "A balanced model in the Ministral 3 family",
 		provider: "Mistral",
 	},
 	{
@@ -95,6 +95,14 @@ export const CURATED_MODELS: ModelOption[] = [
 		description: "Good balance of speed and quality",
 		provider: "Mistral",
 	},
+
+	// TNG
+	{
+		id: "tngtech/deepseek-r1t2-chimera:free",
+		label: "TNG: Deepseek R1T2 Chimera",
+		description: "A balanced model in the Deepseek R1T2 family",
+		provider: "TNG",
+	}
 ];
 
 export const DEFAULT_MODEL = "openai/gpt-4o-mini";

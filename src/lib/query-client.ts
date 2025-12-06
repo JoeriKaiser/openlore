@@ -1,54 +1,38 @@
 import { QueryClient } from "@tanstack/react-query";
 
 export const queryClient = new QueryClient({
-	defaultOptions: {
-		queries: {
-			staleTime: 5 * 60 * 1000,
-			retry: (failureCount, error: any) => {
-				if (
-					error?.status >= 400 &&
-					error?.status < 500 &&
-					error?.status !== 401
-				) {
-					return false;
-				}
-				return failureCount < 3;
-			},
-		},
-		mutations: {
-			retry: false,
-		},
-	},
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: (count, error) => {
+        const status = (error as { status?: number })?.status;
+        if (status && status >= 400 && status < 500 && status !== 401) return false;
+        return count < 3;
+      },
+    },
+    mutations: { retry: false },
+  },
 });
 
 export const queryKeys = {
-	lore: {
-		all: ["lore"] as const,
-		lists: () => [...queryKeys.lore.all, "list"] as const,
-		list: (filters: Record<string, unknown>) =>
-			[...queryKeys.lore.lists(), { filters }] as const,
-		details: () => [...queryKeys.lore.all, "detail"] as const,
-		detail: (id: string | number) => [...queryKeys.lore.details(), id] as const,
-	},
-	characters: {
-		all: ["characters"] as const,
-		lists: () => [...queryKeys.characters.all, "list"] as const,
-		list: (filters: Record<string, unknown>) =>
-			[...queryKeys.characters.lists(), { filters }] as const,
-		details: () => [...queryKeys.characters.all, "detail"] as const,
-		detail: (id: string | number) =>
-			[...queryKeys.characters.details(), id] as const,
-	},
-	ai: {
-		models: ["ai", "models"] as const,
-		keyStatus: ["ai", "key", "status"] as const,
-	},
-	chats: {
-		all: ["chats"] as const,
-		lists: () => [...queryKeys.chats.all, "list"] as const,
-		details: () => [...queryKeys.chats.all, "detail"] as const,
-		detail: (id: number) => [...queryKeys.chats.details(), id] as const,
-		messages: (id: number) =>
-			[...queryKeys.chats.detail(id), "messages"] as const,
-	},
-} as const;
+  lore: {
+    all: ["lore"] as const,
+    lists: () => [...queryKeys.lore.all, "list"] as const,
+    detail: (id: number | string) => [...queryKeys.lore.all, "detail", id] as const,
+  },
+  characters: {
+    all: ["characters"] as const,
+    lists: () => [...queryKeys.characters.all, "list"] as const,
+    detail: (id: number | string) => [...queryKeys.characters.all, "detail", id] as const,
+  },
+  ai: {
+    models: ["ai", "models"] as const,
+    keyStatus: ["ai", "key", "status"] as const,
+  },
+  chats: {
+    all: ["chats"] as const,
+    lists: () => [...queryKeys.chats.all, "list"] as const,
+    detail: (id: number) => [...queryKeys.chats.all, "detail", id] as const,
+    messages: (id: number) => [...queryKeys.chats.detail(id), "messages"] as const,
+  },
+};

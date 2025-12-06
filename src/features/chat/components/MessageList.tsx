@@ -1,55 +1,50 @@
-import type { Message } from "@/features/chat/types";
+import { forwardRef } from "react";
+import { Message } from "./Message";
+import type { Message as MessageType } from "@/types/entities";
 
 type Props = {
-	messages: Message[];
-	listRef: React.RefObject<HTMLDivElement>;
-	onScroll: () => void;
+  messages: MessageType[];
+  onScroll: () => void;
+  streamingId?: number;
+  onSaveToLore?: (title: string, content: string) => void;
+  isSavingLore?: boolean;
 };
 
-export function MessageList({ messages, listRef, onScroll }: Props) {
-	return (
-		<div ref={listRef} onScroll={onScroll} className="flex-1 overflow-auto">
-			<div className="mx-auto w-full max-w-3xl px-3 py-4 md:px-6">
-				{messages.length === 0 ? (
-					<div className="text-sm text-muted-foreground">
-						Start a conversation by sending a message.
-						<div className="mt-2">
-							Tips:
-							<ul className="ml-5 list-disc">
-								<li>Shift+Enter for a new line</li>
-								<li>Esc to stop streaming</li>
-								<li>Ctrl/Cmd+K to open Context</li>
-							</ul>
-						</div>
-					</div>
-				) : (
-					<ul className="space-y-3">
-						{messages.map((m) => {
-							const isUser = m.role === "user";
-							return (
-								<li key={m.id} className="w-full">
-									<div
-										className={`flex w-full ${
-											isUser ? "justify-end" : "justify-start"
-										}`}
-									>
-										<div
-											className={`max-w-full whitespace-pre-wrap break-words text-[0.95rem] leading-7 ${
-												isUser
-													? "bg-primary/10 text-foreground"
-													: "text-foreground"
-											} rounded-md px-3 py-2`}
-											style={{ lineHeight: 1.6 }}
-										>
-											{m.content}
-										</div>
-									</div>
-								</li>
-							);
-						})}
-					</ul>
-				)}
-			</div>
-		</div>
-	);
-}
+export const MessageList = forwardRef<HTMLDivElement, Props>(function MessageList(
+  { messages, onScroll, streamingId, onSaveToLore, isSavingLore },
+  ref
+) {
+  if (messages.length === 0) {
+    return (
+      <div ref={ref} className="flex-1 overflow-auto">
+        <div className="mx-auto max-w-3xl px-4 py-8">
+          <div className="text-sm text-muted-foreground">
+            <p className="font-medium mb-2">Start a conversation</p>
+            <ul className="space-y-1 text-xs">
+              <li>• Shift+Enter for new line</li>
+              <li>• Esc to stop streaming</li>
+              <li>• Ctrl/Cmd+K for context panel</li>
+              <li>• Hover messages to save to lore</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div ref={ref} onScroll={onScroll} className="flex-1 overflow-auto">
+      <div className="mx-auto max-w-3xl px-4 py-6 space-y-6">
+        {messages.map((m) => (
+          <Message
+            key={m.id}
+            message={m}
+            isStreaming={m.id === streamingId}
+            onSaveToLore={m.role === "assistant" ? onSaveToLore : undefined}
+            isSavingLore={isSavingLore}
+          />
+        ))}
+      </div>
+    </div>
+  );
+});
