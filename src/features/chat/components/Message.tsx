@@ -1,13 +1,6 @@
 import { memo, useState } from "react";
-import { BookOpen, Check, Copy, RefreshCw, Sparkles, Trash2 } from "lucide-react";
+import { BookOpen, Brain, Check, ChevronDown, ChevronRight, Copy, RefreshCw, Trash2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +36,9 @@ export const Message = memo(function Message({
   const [showLoreDialog, setShowLoreDialog] = useState(false);
   const [loreTitle, setLoreTitle] = useState("");
   const [loreContent, setLoreContent] = useState("");
+  const [reasoningExpanded, setReasoningExpanded] = useState(false);
   const isUser = message.role === "user";
+  const hasReasoning = !!message.reasoning;
 
   const copy = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -70,10 +65,45 @@ export const Message = memo(function Message({
     <>
       <div className={`group w-full ${isUser ? "flex justify-end" : ""}`}>
         <div className={`relative max-w-[85%] ${isUser ? "bg-primary/10" : ""} rounded-lg px-4 py-3`}>
+          {!isUser && hasReasoning && (
+            <div className="mb-3">
+              <button
+                onClick={() => setReasoningExpanded(!reasoningExpanded)}
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {reasoningExpanded ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronRight className="h-3 w-3" />
+                )}
+                <Brain className="h-3 w-3" />
+                <span>
+                  {isStreaming && !message.content ? "Thinking..." : "View reasoning"}
+                </span>
+              </button>
+              {reasoningExpanded && (
+                <div className="mt-2 p-3 rounded-md bg-muted/50 border border-border/50">
+                  <div className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
+                    {message.reasoning}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {isUser ? (
             <div className="whitespace-pre-wrap text-sm">{message.content}</div>
           ) : (
-            <MarkdownRenderer content={message.content} />
+            <>
+              {message.content ? (
+                <MarkdownRenderer content={message.content} />
+              ) : isStreaming && hasReasoning ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <span>Thinking...</span>
+                </div>
+              ) : null}
+            </>
           )}
 
           {!isStreaming && (
