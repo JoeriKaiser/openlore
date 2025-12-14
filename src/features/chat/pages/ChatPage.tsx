@@ -59,6 +59,7 @@ export function ChatPage() {
   const [loreIds, setLoreIds] = useState<number[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
+  const [streamReasoning, setStreamReasoning] = useState("");
   const [ephemeral, setEphemeral] = useState<Message[]>([]);
   const [atBottom, setAtBottom] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
@@ -72,16 +73,17 @@ export function ChatPage() {
 
   const allMessages = useMemo(() => {
     const arr = [...messages, ...ephemeral];
-    if (streamText) {
+    if (streamText || streamReasoning) {
       arr.push({
         id: -1,
         role: "assistant",
         content: streamText,
+        reasoning: streamReasoning || null,
         createdAt: new Date().toISOString(),
       });
     }
     return arr;
-  }, [messages, ephemeral, streamText]);
+  }, [messages, ephemeral, streamText, streamReasoning]);
 
   const scrollToBottom = useCallback(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
@@ -97,6 +99,7 @@ export function ChatPage() {
   const reset = useCallback(() => {
     setSelectedChatId(null);
     setStreamText("");
+    setStreamReasoning("");
     setEphemeral([]);
     clearDraft(currentDraftKey);
     setSystem("");
@@ -108,6 +111,7 @@ export function ChatPage() {
     cancelRef.current?.cancel();
     setIsStreaming(false);
     setStreamText("");
+    setStreamReasoning("");
     setEphemeral([]);
   }, []);
 
@@ -124,6 +128,7 @@ export function ChatPage() {
 
     setIsStreaming(true);
     setStreamText("");
+    setStreamReasoning("");
     setEphemeral([
       {
         id: Date.now(),
@@ -143,10 +148,12 @@ export function ChatPage() {
       system: system.trim() || undefined,
       characterId: characterId ?? undefined,
       loreIds: loreIds.length > 0 ? loreIds : undefined,
+      onReasoning: (delta) => setStreamReasoning((s) => s + delta),
       onChunk: (delta) => setStreamText((s) => s + delta),
       onDone: async (data) => {
         setIsStreaming(false);
         setStreamText("");
+        setStreamReasoning("");
         setEphemeral([]);
         if (!chatSnapshot) setSelectedChatId(data.chatId);
         await refetchChats();
@@ -156,6 +163,7 @@ export function ChatPage() {
       onError: (err) => {
         setIsStreaming(false);
         setStreamText("");
+        setStreamReasoning("");
         setEphemeral([]);
         toast.error(err);
       },
@@ -225,6 +233,7 @@ export function ChatPage() {
           onSelect={(id) => {
             setSelectedChatId(id);
             setStreamText("");
+            setStreamReasoning("");
             setEphemeral([]);
           }}
           onNew={reset}
@@ -250,7 +259,7 @@ export function ChatPage() {
             ref={listRef}
             messages={allMessages}
             onScroll={handleScroll}
-            streamingId={streamText ? -1 : undefined}
+            streamingId={streamText || streamReasoning ? -1 : undefined}
             onSaveToLore={handleSaveToLore}
             isSavingLore={isSavingLore}
           />

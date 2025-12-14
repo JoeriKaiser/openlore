@@ -10,8 +10,8 @@ export interface ModelOption {
 export const CURATED_MODELS: ModelOption[] = [
 	// OpenAI
 	{
-		id: "openai/gpt-4o",
-		label: "GPT-4o",
+		id: "openai/gpt-5.2",
+		label: "GPT-5.2",
 		description: "Most capable OpenAI model",
 		provider: "OpenAI",
 	},
@@ -56,14 +56,14 @@ export const CURATED_MODELS: ModelOption[] = [
 
 	// Google
 	{
-		id: "google/gemini-pro-1.5",
-		label: "Gemini 1.5 Pro",
+		id: "google/gemini-2.5-flash",
+		label: "Gemini 2.5 Flash",
 		description: "Large context window",
 		provider: "Google",
 	},
 	{
-		id: "google/gemini-flash-1.5",
-		label: "Gemini 1.5 Flash",
+		id: "google/gemini-2.0-flash-001",
+		label: "Gemini 2.0 Flash",
 		description: "Fast multimodal model",
 		provider: "Google",
 	},

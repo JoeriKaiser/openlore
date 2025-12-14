@@ -18,8 +18,11 @@ export interface Chat extends BaseEntity {
 
 export interface Message {
   id: number;
-  role: "user" | "assistant";
+  chatId?: number;
+  userId?: string;
+  role: string;
   content: string;
+  reasoning?: string | null;
   createdAt: string;
 }
 

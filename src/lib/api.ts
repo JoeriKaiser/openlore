@@ -74,8 +74,9 @@ export const chatApi = {
     system?: string;
     characterId?: number;
     loreIds?: number[];
+    onReasoning?: (delta: string) => void;
     onChunk?: (delta: string) => void;
-    onDone?: (data: { chatId: number; messageId: number | null; preview: string }) => void;
+    onDone?: (data: { chatId: number; messageId: number | null; preview: string; hasReasoning?: boolean }) => void;
     onError?: (err: string) => void;
   }) => {
     const controller = new AbortController();
@@ -128,7 +129,8 @@ export const chatApi = {
 
             try {
               const obj = JSON.parse(dataLine);
-              if (eventName === "chunk" && obj?.delta) params.onChunk?.(obj.delta);
+              if (eventName === "reasoning" && obj?.delta) params.onReasoning?.(obj.delta);
+              else if (eventName === "chunk" && obj?.delta) params.onChunk?.(obj.delta);
               else if (eventName === "done") params.onDone?.(obj);
               else if (eventName === "error") params.onError?.(obj?.message ?? "Stream error");
             } catch {}
