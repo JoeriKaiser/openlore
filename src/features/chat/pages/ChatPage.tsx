@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
 import { ChatSidebar } from "../components/ChatSidebar";
 import { ChatHeader } from "../components/ChatHeader";
@@ -60,9 +59,10 @@ export function ChatPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [streamReasoning, setStreamReasoning] = useState("");
-  const [ephemeral, setEphemeral] = useState<Message[]>([]);
+  const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
+  const [newMessageCount, setNewMessageCount] = useState(0);
 
   const keyExists = !!keyStatus?.exists;
   const currentChat = useMemo(() => chats.find((c) => c.id === selectedChatId), [chats, selectedChatId]);
@@ -72,7 +72,12 @@ export function ChatPage() {
   );
 
   const allMessages = useMemo(() => {
-    const arr = [...messages, ...ephemeral];
+    const arr = [...messages];
+    
+    if (optimisticMessage) {
+      arr.push(optimisticMessage);
+    }
+    
     if (streamText || streamReasoning) {
       arr.push({
         id: -1,
@@ -82,29 +87,34 @@ export function ChatPage() {
         createdAt: new Date().toISOString(),
       });
     }
+    
     return arr;
-  }, [messages, ephemeral, streamText, streamReasoning]);
+  }, [messages, optimisticMessage, streamText, streamReasoning]);
 
   const scrollToBottom = useCallback(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight });
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
     setAtBottom(true);
+    setNewMessageCount(0);
   }, []);
 
   const handleScroll = useCallback(() => {
     const el = listRef.current;
     if (!el) return;
-    setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 32);
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
+    setAtBottom(isAtBottom);
+    if (isAtBottom) setNewMessageCount(0);
   }, []);
 
   const reset = useCallback(() => {
     setSelectedChatId(null);
     setStreamText("");
     setStreamReasoning("");
-    setEphemeral([]);
+    setOptimisticMessage(null);
     clearDraft(currentDraftKey);
     setSystem("");
     setCharacterId(null);
     setLoreIds([]);
+    setNewMessageCount(0);
   }, [setSelectedChatId, clearDraft, currentDraftKey]);
 
   const stopStreaming = useCallback(() => {
@@ -112,7 +122,7 @@ export function ChatPage() {
     setIsStreaming(false);
     setStreamText("");
     setStreamReasoning("");
-    setEphemeral([]);
+    setOptimisticMessage(null);
   }, []);
 
   const handleSaveToLore = useCallback(
@@ -122,22 +132,34 @@ export function ChatPage() {
     [createLore]
   );
 
+  const handleSuggestionClick = useCallback(
+    (text: string) => {
+      setDraft(currentDraftKey, text);
+    },
+    [setDraft, currentDraftKey]
+  );
+
   const send = useCallback(async () => {
     const content = draft.trim();
     if (!content || !model || isStreaming) return;
 
+    const userMessage: Message = {
+      id: Date.now(),
+      role: "user",
+      content,
+      reasoning: null,
+      createdAt: new Date().toISOString(),
+    };
+
+    setOptimisticMessage(userMessage);
     setIsStreaming(true);
     setStreamText("");
     setStreamReasoning("");
-    setEphemeral([
-      {
-        id: Date.now(),
-        role: "user",
-        content,
-        createdAt: new Date().toISOString(),
-      },
-    ]);
     clearDraft(currentDraftKey);
+    
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
 
     const chatSnapshot = selectedChatId;
 
@@ -154,17 +176,28 @@ export function ChatPage() {
         setIsStreaming(false);
         setStreamText("");
         setStreamReasoning("");
-        setEphemeral([]);
-        if (!chatSnapshot) setSelectedChatId(data.chatId);
+        setOptimisticMessage(null);
+        
+        if (!chatSnapshot) {
+          setSelectedChatId(data.chatId);
+        }
+        
         await refetchChats();
         await qc.invalidateQueries({ queryKey: queryKeys.chats.messages(data.chatId) });
-        setTimeout(scrollToBottom, 0);
+        
+        if (!atBottom) {
+          setNewMessageCount((c) => c + 1);
+        }
+        
+        requestAnimationFrame(() => {
+          if (atBottom) scrollToBottom();
+        });
       },
       onError: (err) => {
         setIsStreaming(false);
         setStreamText("");
         setStreamReasoning("");
-        setEphemeral([]);
+        setOptimisticMessage(null);
         toast.error(err);
       },
     });
@@ -182,6 +215,7 @@ export function ChatPage() {
     refetchChats,
     qc,
     scrollToBottom,
+    atBottom,
   ]);
 
   useEffect(() => {
@@ -191,10 +225,6 @@ export function ChatPage() {
       setCharacterId(currentChat.characterId);
     }
   }, [currentChat]);
-
-  useEffect(() => {
-    if (atBottom) scrollToBottom();
-  }, [allMessages, atBottom, scrollToBottom]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -213,7 +243,7 @@ export function ChatPage() {
   }, [isStreaming, showContext, showSidebar, setShowContext, setShowSidebar, stopStreaming]);
 
   return (
-    <div className="h-[calc(100dvh-6rem)] overflow-hidden rounded-lg border">
+    <div className="h-[calc(100dvh-6rem)] overflow-hidden rounded-xl border bg-background shadow-sm">
       <ChatHeader
         chat={currentChat}
         model={model}
@@ -234,7 +264,8 @@ export function ChatPage() {
             setSelectedChatId(id);
             setStreamText("");
             setStreamReasoning("");
-            setEphemeral([]);
+            setOptimisticMessage(null);
+            setNewMessageCount(0);
           }}
           onNew={reset}
           onDelete={(id) => setDeleteTarget(id)}
@@ -262,15 +293,10 @@ export function ChatPage() {
             streamingId={streamText || streamReasoning ? -1 : undefined}
             onSaveToLore={handleSaveToLore}
             isSavingLore={isSavingLore}
+            atBottom={atBottom}
+            onScrollToBottom={scrollToBottom}
+            newMessageCount={newMessageCount}
           />
-
-          {!atBottom && (
-            <div className="absolute bottom-24 right-4">
-              <Button variant="outline" size="sm" onClick={scrollToBottom}>
-                ↓ Latest
-              </Button>
-            </div>
-          )}
 
           <Composer
             value={draft}
@@ -278,7 +304,12 @@ export function ChatPage() {
             onSend={send}
             onStop={stopStreaming}
             isStreaming={isStreaming}
-            disabled={!keyExists || isStreaming || !model}
+            disabled={!keyExists || !model}
+            placeholder={
+              !keyExists
+                ? "Set your API key in Settings to start chatting"
+                : "Message..."
+            }
           />
 
           <ContextPanel

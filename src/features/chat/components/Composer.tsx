@@ -1,3 +1,5 @@
+import { useRef, useEffect, useCallback } from "react";
+import { ArrowUp, Square, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -8,36 +10,110 @@ type Props = {
   onStop: () => void;
   isStreaming: boolean;
   disabled: boolean;
+  placeholder?: string;
 };
 
-export function Composer({ value, onChange, onSend, onStop, isStreaming, disabled }: Props) {
+export function Composer({
+  value,
+  onChange,
+  onSend,
+  onStop,
+  isStreaming,
+  disabled,
+  placeholder = "Message...",
+}: Props) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const canSend = !disabled && !isStreaming && value.trim().length > 0;
+
+  const adjustHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
+  }, []);
+
+  useEffect(() => {
+    adjustHeight();
+  }, [value, adjustHeight]);
+
+  useEffect(() => {
+    if (!isStreaming && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [isStreaming]);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      onSend();
+      if (canSend) onSend();
+    }
+    if (e.key === "Escape" && isStreaming) {
+      e.preventDefault();
+      onStop();
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value);
+  };
+
   return (
-    <div className="border-t p-3 pb-[env(safe-area-inset-bottom)]">
-      <div className="mx-auto max-w-3xl flex gap-2">
-        <Textarea
-          rows={2}
-          placeholder="Type a message..."
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          disabled={disabled}
-          className="min-h-[60px] resize-none"
-        />
-        <div className="flex flex-col gap-2">
-          <Button onClick={onSend} disabled={disabled || !value.trim()}>
-            {isStreaming ? "..." : "Send"}
-          </Button>
-          {isStreaming && (
-            <Button variant="outline" onClick={onStop}>
-              Stop
-            </Button>
+    <div className="border-t bg-background/80 backdrop-blur-sm">
+      <div className="mx-auto max-w-3xl p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="relative flex items-end gap-2 rounded-2xl border bg-background p-2 shadow-sm transition-shadow focus-within:shadow-md focus-within:ring-1 focus-within:ring-ring/20">
+          <Textarea
+            ref={textareaRef}
+            rows={1}
+            placeholder={placeholder}
+            value={value}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            className="min-h-[44px] max-h-[200px] flex-1 resize-none border-0 bg-transparent px-2 py-3 text-sm focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+          
+          <div className="flex shrink-0 items-center gap-1.5 pb-1">
+            {isStreaming ? (
+              <Button
+                size="icon"
+                variant="destructive"
+                onClick={onStop}
+                className="h-9 w-9 rounded-xl"
+              >
+                <Square className="h-4 w-4 fill-current" />
+              </Button>
+            ) : (
+              <Button
+                size="icon"
+                onClick={onSend}
+                disabled={!canSend}
+                className="h-9 w-9 rounded-xl transition-all disabled:opacity-40"
+              >
+                {disabled ? (
+                  <Sparkles className="h-4 w-4" />
+                ) : (
+                  <ArrowUp className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        <div className="mt-1.5 flex items-center justify-between px-1">
+          <span className="text-[10px] text-muted-foreground/60">
+            {isStreaming ? (
+              <span className="flex items-center gap-1">
+                <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+                Generating...
+              </span>
+            ) : (
+              "Enter to send · Shift+Enter for new line"
+            )}
+          </span>
+          {value.length > 0 && (
+            <span className="text-[10px] text-muted-foreground/60">
+              {value.length.toLocaleString()}
+            </span>
           )}
         </div>
       </div>
