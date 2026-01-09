@@ -1,4 +1,4 @@
-import type { Character, Chat, Lore, Message } from "@/types/entities";
+import type { Character, Chat, Lore, Message, RetrievedContext } from "@/types/entities";
 import { ApiError } from "@/types/api";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
@@ -74,6 +74,7 @@ export const chatApi = {
     system?: string;
     characterId?: number;
     loreIds?: number[];
+    onContext?: (context: RetrievedContext) => void;
     onReasoning?: (delta: string) => void;
     onChunk?: (delta: string) => void;
     onDone?: (data: { chatId: number; messageId: number | null; preview: string; hasReasoning?: boolean }) => void;
@@ -129,11 +130,13 @@ export const chatApi = {
 
             try {
               const obj = JSON.parse(dataLine);
-              if (eventName === "reasoning" && obj?.delta) params.onReasoning?.(obj.delta);
+              if (eventName === "context") params.onContext?.(obj as RetrievedContext);
+              else if (eventName === "reasoning" && obj?.delta) params.onReasoning?.(obj.delta);
               else if (eventName === "chunk" && obj?.delta) params.onChunk?.(obj.delta);
               else if (eventName === "done") params.onDone?.(obj);
               else if (eventName === "error") params.onError?.(obj?.message ?? "Stream error");
-            } catch {}
+            } catch {
+            }
           }
         }
       } catch (e) {

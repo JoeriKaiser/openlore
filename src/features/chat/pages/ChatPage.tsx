@@ -7,6 +7,7 @@ import { ChatHeader } from "../components/ChatHeader";
 import { MessageList } from "../components/MessageList";
 import { Composer } from "../components/Composer";
 import { ContextPanel } from "../components/ContextPanel";
+import { RetrievedContext } from "../components/RetrievedContext";
 import { useChatStore } from "../store";
 import {
   useKeyStatus,
@@ -20,7 +21,7 @@ import {
 import { chatApi } from "@/lib/api";
 import { queryKeys } from "@/lib/query-client";
 import { CURATED_MODELS, DEFAULT_MODEL } from "@/config/models";
-import type { Message } from "@/types/entities";
+import type { Message, RetrievedContext as RetrievedContextType } from "@/types/entities";
 
 const draftKey = (id: number | null) => (id == null ? "new" : String(id));
 
@@ -59,6 +60,7 @@ export function ChatPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [streamReasoning, setStreamReasoning] = useState("");
+  const [streamContext, setStreamContext] = useState<RetrievedContextType | null>(null);
   const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(null);
   const [atBottom, setAtBottom] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
@@ -73,11 +75,11 @@ export function ChatPage() {
 
   const allMessages = useMemo(() => {
     const arr = [...messages];
-    
+
     if (optimisticMessage) {
       arr.push(optimisticMessage);
     }
-    
+
     if (streamText || streamReasoning) {
       arr.push({
         id: -1,
@@ -87,7 +89,7 @@ export function ChatPage() {
         createdAt: new Date().toISOString(),
       });
     }
-    
+
     return arr;
   }, [messages, optimisticMessage, streamText, streamReasoning]);
 
@@ -109,6 +111,7 @@ export function ChatPage() {
     setSelectedChatId(null);
     setStreamText("");
     setStreamReasoning("");
+    setStreamContext(null);
     setOptimisticMessage(null);
     clearDraft(currentDraftKey);
     setSystem("");
@@ -122,6 +125,7 @@ export function ChatPage() {
     setIsStreaming(false);
     setStreamText("");
     setStreamReasoning("");
+    setStreamContext(null);
     setOptimisticMessage(null);
   }, []);
 
@@ -130,13 +134,6 @@ export function ChatPage() {
       createLore({ title, content });
     },
     [createLore]
-  );
-
-  const handleSuggestionClick = useCallback(
-    (text: string) => {
-      setDraft(currentDraftKey, text);
-    },
-    [setDraft, currentDraftKey]
   );
 
   const send = useCallback(async () => {
@@ -155,8 +152,9 @@ export function ChatPage() {
     setIsStreaming(true);
     setStreamText("");
     setStreamReasoning("");
+    setStreamContext(null);
     clearDraft(currentDraftKey);
-    
+
     requestAnimationFrame(() => {
       scrollToBottom();
     });
@@ -170,25 +168,27 @@ export function ChatPage() {
       system: system.trim() || undefined,
       characterId: characterId ?? undefined,
       loreIds: loreIds.length > 0 ? loreIds : undefined,
+      onContext: (ctx) => setStreamContext(ctx),
       onReasoning: (delta) => setStreamReasoning((s) => s + delta),
       onChunk: (delta) => setStreamText((s) => s + delta),
       onDone: async (data) => {
         setIsStreaming(false);
         setStreamText("");
         setStreamReasoning("");
+        setStreamContext(null);
         setOptimisticMessage(null);
-        
+
         if (!chatSnapshot) {
           setSelectedChatId(data.chatId);
         }
-        
+
         await refetchChats();
         await qc.invalidateQueries({ queryKey: queryKeys.chats.messages(data.chatId) });
-        
+
         if (!atBottom) {
           setNewMessageCount((c) => c + 1);
         }
-        
+
         requestAnimationFrame(() => {
           if (atBottom) scrollToBottom();
         });
@@ -197,6 +197,7 @@ export function ChatPage() {
         setIsStreaming(false);
         setStreamText("");
         setStreamReasoning("");
+        setStreamContext(null);
         setOptimisticMessage(null);
         toast.error(err);
       },
@@ -264,6 +265,7 @@ export function ChatPage() {
             setSelectedChatId(id);
             setStreamText("");
             setStreamReasoning("");
+            setStreamContext(null);
             setOptimisticMessage(null);
             setNewMessageCount(0);
           }}
@@ -291,6 +293,7 @@ export function ChatPage() {
             messages={allMessages}
             onScroll={handleScroll}
             streamingId={streamText || streamReasoning ? -1 : undefined}
+            streamContext={streamContext}
             onSaveToLore={handleSaveToLore}
             isSavingLore={isSavingLore}
             atBottom={atBottom}

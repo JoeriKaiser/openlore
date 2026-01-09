@@ -1,7 +1,7 @@
+import type { Chat } from "@/types/entities";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { Chat } from "@/types/entities";
 
 type Props = {
   chats: Chat[];

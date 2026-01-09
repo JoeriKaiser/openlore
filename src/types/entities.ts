@@ -35,3 +35,29 @@ export interface User {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface RetrievedLoreItem {
+  sourceId: number | null;
+  title: string | null;
+  snippet: string;
+  score: number;
+}
+
+export interface RetrievedCharacterItem {
+  sourceId: number | null;
+  name: string | null;
+  snippet: string;
+  score: number;
+}
+
+export interface RetrievedMemoryItem {
+  chatId: number | null;
+  snippet: string;
+  score: number;
+}
+
+export interface RetrievedContext {
+  lore: RetrievedLoreItem[];
+  characters: RetrievedCharacterItem[];
+  memories: RetrievedMemoryItem[];
+}
