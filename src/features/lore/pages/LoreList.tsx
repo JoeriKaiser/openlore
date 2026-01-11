@@ -1,16 +1,19 @@
+import type { Lore } from "@/types/entities";
 import { BookOpen } from "lucide-react";
 import { EntityList } from "@/components/entity/EntityList";
 import { useLoreList } from "../hooks";
+
+type LoreItem = Lore & { [key: string]: unknown };
 
 export function LoreListPage() {
   const { data = [], isLoading, error } = useLoreList();
 
   return (
-    <EntityList
+    <EntityList<LoreItem>
       title="Lore Library"
       icon={BookOpen}
-      basePath="/app/lore"
-      items={data}
+      basePath="/lore"
+      items={data as LoreItem[]}
       isLoading={isLoading}
       error={error}
       searchFields={["title", "content"]}

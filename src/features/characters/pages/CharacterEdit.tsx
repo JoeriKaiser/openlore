@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "lucide-react";
 import { EntityForm } from "@/components/entity/EntityForm";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
@@ -10,7 +9,7 @@ import {
   useUpdateCharacter,
   useDeleteCharacter,
 } from "../hooks";
-import { characterSchema, type CharacterFormData } from "../types";
+import { characterResolver, type CharacterFormData } from "../types";
 
 export function CharacterEditPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,7 +21,7 @@ export function CharacterEditPage() {
   const { mutate: remove, isPending: isDeleting } = useDeleteCharacter();
 
   const form = useForm<CharacterFormData>({
-    resolver: zodResolver(characterSchema),
+    resolver: characterResolver,
   });
 
   useEffect(() => {

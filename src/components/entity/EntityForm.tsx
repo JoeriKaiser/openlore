@@ -152,7 +152,8 @@ export function EntityForm<T extends FieldValues>({
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             {tips.map((tip, i) => (
-              <p key={i}>{tip}</p>
+              // biome-ignore lint/suspicious/noArrayIndexKey: tips are unique
+<p key={i}>{tip}</p>
             ))}
           </CardContent>
         </Card>

@@ -1,16 +1,19 @@
+import type { Character } from "@/types/entities";
 import { User } from "lucide-react";
 import { EntityList } from "@/components/entity/EntityList";
 import { useCharacterList } from "../hooks";
+
+type CharacterItem = Character & { [key: string]: unknown };
 
 export function CharacterListPage() {
   const { data = [], isLoading, error } = useCharacterList();
 
   return (
-    <EntityList
+    <EntityList<CharacterItem>
       title="Characters"
       icon={User}
       basePath="/app/characters"
-      items={data}
+      items={data as CharacterItem[]}
       isLoading={isLoading}
       error={error}
       searchFields={["name", "bio"]}

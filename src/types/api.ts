@@ -5,12 +5,15 @@ export interface BaseEntity {
 }
 
 export class ApiError extends Error {
-  constructor(
-    public override message: string,
-    public status: number,
-    public data?: Record<string, unknown>,
-  ) {
+  message: string;
+  status: number;
+  data?: Record<string, unknown>;
+
+  constructor(message: string, status: number, data?: Record<string, unknown>) {
     super(message);
+    this.message = message;
+    this.status = status;
+    this.data = data;
     this.name = "ApiError";
   }
 }

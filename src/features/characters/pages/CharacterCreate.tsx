@@ -1,14 +1,13 @@
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { UserPlus } from "lucide-react";
 import { EntityForm } from "@/components/entity/EntityForm";
 import { useCreateCharacter } from "../hooks";
-import { characterSchema, type CharacterFormData } from "../types";
+import { characterResolver, type CharacterFormData } from "../types";
 
 export function CharacterCreatePage() {
   const { mutate, isPending } = useCreateCharacter();
   const form = useForm<CharacterFormData>({
-    resolver: zodResolver(characterSchema),
+    resolver: characterResolver,
     defaultValues: { name: "", bio: "" },
   });
 
