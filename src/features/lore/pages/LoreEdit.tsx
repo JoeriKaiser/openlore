@@ -26,11 +26,17 @@ export function LoreEditPage() {
   }, [data, form]);
 
   if (isLoading || !data) {
-    return <div className="flex items-center justify-center p-8">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center p-8">Loading...</div>
+    );
   }
 
   if (error) {
-    return <div className="flex items-center justify-center p-8">Error loading entry</div>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        Error loading entry
+      </div>
+    );
   }
 
   return (
@@ -42,8 +48,20 @@ export function LoreEditPage() {
         basePath="/app/lore"
         form={form}
         fields={[
-          { name: "title", label: "Title", placeholder: "Enter title...", required: true },
-          { name: "content", label: "Content", type: "textarea", placeholder: "Write content...", rows: 12, required: true },
+          {
+            name: "title",
+            label: "Title",
+            placeholder: "Enter title...",
+            required: true,
+          },
+          {
+            name: "content",
+            label: "Content",
+            type: "textarea",
+            placeholder: "Write content...",
+            rows: 12,
+            required: true,
+          },
         ]}
         onSubmit={(formData) => update({ id: loreId, data: formData })}
         onDelete={() => setShowDelete(true)}
@@ -51,8 +69,14 @@ export function LoreEditPage() {
         isDeleting={isDeleting}
         infoItems={[
           { label: "ID", value: `#${data.id}` },
-          { label: "Created", value: new Date(data.createdAt).toLocaleDateString() },
-          { label: "Updated", value: new Date(data.updatedAt).toLocaleDateString() },
+          {
+            label: "Created",
+            value: new Date(data.createdAt).toLocaleDateString(),
+          },
+          {
+            label: "Updated",
+            value: new Date(data.updatedAt).toLocaleDateString(),
+          },
         ]}
       />
       <ConfirmDialog

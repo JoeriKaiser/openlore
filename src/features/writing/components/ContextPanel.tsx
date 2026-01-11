@@ -2,7 +2,16 @@
 /** biome-ignore-all lint/a11y/useButtonType: mvp */
 /** biome-ignore-all lint/a11y/useKeyWithClickEvents: mvp */
 import { memo, useState, useCallback, useMemo } from "react";
-import { Check, ChevronsUpDown, X, RotateCcw, Sparkles, Users, BookOpen, MessageSquare } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  X,
+  RotateCcw,
+  Sparkles,
+  Users,
+  BookOpen,
+  MessageSquare,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -72,12 +81,12 @@ export const ContextPanel = memo(function ContextPanel({
 
   const selectedChar = useMemo(
     () => characters.find((c) => c.id === selectedCharacterId),
-    [characters, selectedCharacterId]
+    [characters, selectedCharacterId],
   );
 
   const selectedLore = useMemo(
     () => loreEntries.filter((l) => selectedLoreIds.includes(l.id)),
-    [loreEntries, selectedLoreIds]
+    [loreEntries, selectedLoreIds],
   );
 
   const toggleLore = useCallback(
@@ -85,10 +94,10 @@ export const ContextPanel = memo(function ContextPanel({
       setSelectedLoreIds(
         selectedLoreIds.includes(id)
           ? selectedLoreIds.filter((i) => i !== id)
-          : [...selectedLoreIds, id]
+          : [...selectedLoreIds, id],
       );
     },
-    [selectedLoreIds, setSelectedLoreIds]
+    [selectedLoreIds, setSelectedLoreIds],
   );
 
   const handleReset = () => {
@@ -97,26 +106,43 @@ export const ContextPanel = memo(function ContextPanel({
     setSystem("");
   };
 
-  const hasContext = selectedCharacterId || selectedLoreIds.length > 0 || system.trim();
+  const hasContext =
+    selectedCharacterId || selectedLoreIds.length > 0 || system.trim();
 
   if (!open) return null;
 
   return (
     <div className="absolute inset-0 z-30">
       <div
-        className="absolute inset-0 bg-black/30 backdrop-blur-sm animate-in fade-in duration-200"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
         onClick={onClose}
       />
       <div className="absolute right-0 top-0 h-full w-full max-w-[400px] border-l bg-background shadow-2xl animate-in slide-in-from-right duration-300">
         <div className="flex h-full flex-col">
-          <div className="flex items-center justify-between border-b px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <h2 className="font-semibold">Context Settings</h2>
+          {/* Enhanced header with gradient */}
+          <div className="relative overflow-hidden border-b">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-accent/5" />
+            <div className="relative flex items-center justify-between px-4 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-primary/5">
+                  <BookOpen className="size-4 text-primary" />
+                </div>
+                <div>
+                  <h2 className="font-semibold">Reference Library</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Characters, lore & settings
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
-              <X className="h-4 w-4" />
-            </Button>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
@@ -125,7 +151,11 @@ export const ContextPanel = memo(function ContextPanel({
                 <Sparkles className="h-3.5 w-3.5" />
                 Model
               </Label>
-              <Select value={model} onValueChange={setModel} disabled={isStreaming}>
+              <Select
+                value={model}
+                onValueChange={setModel}
+                disabled={isStreaming}
+              >
                 <SelectTrigger className="h-9">
                   <SelectValue />
                 </SelectTrigger>
@@ -188,7 +218,9 @@ export const ContextPanel = memo(function ContextPanel({
                           >
                             <Check
                               className={`mr-2 h-4 w-4 ${
-                                selectedCharacterId === c.id ? "opacity-100" : "opacity-0"
+                                selectedCharacterId === c.id
+                                  ? "opacity-100"
+                                  : "opacity-0"
                               }`}
                             />
                             {c.name}
@@ -233,10 +265,15 @@ export const ContextPanel = memo(function ContextPanel({
                       <CommandEmpty>No lore entries found</CommandEmpty>
                       <CommandGroup>
                         {loreEntries.map((l) => (
-                          <CommandItem key={l.id} onSelect={() => toggleLore(l.id)}>
+                          <CommandItem
+                            key={l.id}
+                            onSelect={() => toggleLore(l.id)}
+                          >
                             <Check
                               className={`mr-2 h-4 w-4 ${
-                                selectedLoreIds.includes(l.id) ? "opacity-100" : "opacity-0"
+                                selectedLoreIds.includes(l.id)
+                                  ? "opacity-100"
+                                  : "opacity-0"
                               }`}
                             />
                             <span className="truncate">{l.title}</span>
@@ -285,7 +322,8 @@ export const ContextPanel = memo(function ContextPanel({
                 className="resize-none text-sm"
               />
               <p className="text-[10px] text-muted-foreground">
-                Provide custom instructions that will be included at the start of every message
+                Provide custom instructions that will be included at the start
+                of every message
               </p>
             </div>
           </div>

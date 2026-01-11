@@ -39,7 +39,13 @@ const LANGUAGE_LABELS: Record<string, string> = {
   graphql: "GraphQL",
 };
 
-function CodeBlock({ children, className }: { children: string; className?: string }) {
+function CodeBlock({
+  children,
+  className,
+}: {
+  children: string;
+  className?: string;
+}) {
   const [copied, setCopied] = useState(false);
   const language = className?.replace("language-", "") || "";
   const label = LANGUAGE_LABELS[language] || language.toUpperCase() || "Code";
@@ -83,7 +89,9 @@ function CodeBlock({ children, className }: { children: string; className?: stri
   );
 }
 
-export const MarkdownRenderer = memo(function MarkdownRenderer({ content }: Props) {
+export const MarkdownRenderer = memo(function MarkdownRenderer({
+  content,
+}: Props) {
   return (
     <ReactMarkdown
       rehypePlugins={[rehypeHighlight]}
@@ -128,19 +136,33 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content }: Prop
           return <ul className="mb-3 list-disc pl-6 space-y-1">{children}</ul>;
         },
         ol({ children }) {
-          return <ol className="mb-3 list-decimal pl-6 space-y-1">{children}</ol>;
+          return (
+            <ol className="mb-3 list-decimal pl-6 space-y-1">{children}</ol>
+          );
         },
         li({ children }) {
           return <li className="leading-relaxed">{children}</li>;
         },
         h1({ children }) {
-          return <h1 className="mb-3 mt-6 text-xl font-bold first:mt-0">{children}</h1>;
+          return (
+            <h1 className="mb-3 mt-6 text-xl font-bold first:mt-0">
+              {children}
+            </h1>
+          );
         },
         h2({ children }) {
-          return <h2 className="mb-2 mt-5 text-lg font-semibold first:mt-0">{children}</h2>;
+          return (
+            <h2 className="mb-2 mt-5 text-lg font-semibold first:mt-0">
+              {children}
+            </h2>
+          );
         },
         h3({ children }) {
-          return <h3 className="mb-2 mt-4 text-base font-semibold first:mt-0">{children}</h3>;
+          return (
+            <h3 className="mb-2 mt-4 text-base font-semibold first:mt-0">
+              {children}
+            </h3>
+          );
         },
         blockquote({ children }) {
           return (
@@ -164,7 +186,9 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({ content }: Prop
         },
         th({ children }) {
           return (
-            <th className="border-b px-3 py-2 text-left font-medium">{children}</th>
+            <th className="border-b px-3 py-2 text-left font-medium">
+              {children}
+            </th>
           );
         },
         td({ children }) {

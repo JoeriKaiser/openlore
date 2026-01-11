@@ -22,13 +22,24 @@ export function CharacterViewPage() {
       content={
         data?.bio ? (
           <div className="prose prose-slate dark:prose-invert max-w-none">
-            <div className="whitespace-pre-wrap text-base leading-relaxed">{data.bio}</div>
+            <div className="whitespace-pre-wrap text-base leading-relaxed">
+              {data.bio}
+            </div>
           </div>
         ) : (
           <p className="text-muted-foreground italic">No bio provided</p>
         )
       }
-      stats={data?.bio ? [{ label: "Word count", value: data.bio.split(/\s+/).filter(Boolean).length }] : []}
+      stats={
+        data?.bio
+          ? [
+              {
+                label: "Word count",
+                value: data.bio.split(/\s+/).filter(Boolean).length,
+              },
+            ]
+          : []
+      }
     />
   );
 }

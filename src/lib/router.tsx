@@ -19,7 +19,7 @@ import { LoreCreatePage } from "@/features/lore/pages/LoreCreate";
 import { LoreEditPage } from "@/features/lore/pages/LoreEdit";
 import { LoreListPage } from "@/features/lore/pages/LoreList";
 import { LoreViewPage } from "@/features/lore/pages/LoreView";
-import { ChatPage } from "@/features/chat/pages/ChatPage";
+import { ChatPage } from "@/features/writing/pages/ChatPage";
 import { SettingsPage } from "@/features/settings/pages/SettingsPage";
 
 function AuthInit({ children }: { children: ReactNode }) {
@@ -56,13 +56,17 @@ function PublicOnly({ children }: { children: ReactNode }) {
 function Dashboard() {
   return (
     <div className="p-4">
-      <h1 className="text-xl font-semibold mb-2">Welcome to OpenLore</h1>
+      <h1 className="text-xl font-semibold mb-2">Welcome to F-Lore</h1>
       <p className="text-muted-foreground">
         Start by creating a character or adding lore.
       </p>
     </div>
   );
 }
+
+const isRegistrationEnabled =
+  import.meta.env.VITE_REGISTRATION_ENABLED === "true";
+export { isRegistrationEnabled };
 
 export function AppRouter() {
   return (
@@ -77,14 +81,16 @@ export function AppRouter() {
               </PublicOnly>
             }
           />
-          <Route
-            path="/register"
-            element={
-              <PublicOnly>
-                <RegisterPage />
-              </PublicOnly>
-            }
-          />
+          {isRegistrationEnabled && (
+            <Route
+              path="/register"
+              element={
+                <PublicOnly>
+                  <RegisterPage />
+                </PublicOnly>
+              }
+            />
+          )}
           <Route
             path="/app"
             element={
@@ -94,7 +100,7 @@ export function AppRouter() {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="chat" element={<ChatPage />} />
+            <Route path="write" element={<ChatPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="lore" element={<LoreListPage />} />
             <Route path="lore/new" element={<LoreCreatePage />} />

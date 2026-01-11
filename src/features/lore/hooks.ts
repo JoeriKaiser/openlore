@@ -28,7 +28,10 @@ export function useCreateLore() {
   return useMutation({
     mutationFn: loreApi.create,
     onSuccess: (created) => {
-      qc.setQueryData<Lore[]>(queryKeys.lore.lists(), (old) => [created, ...(old ?? [])]);
+      qc.setQueryData<Lore[]>(queryKeys.lore.lists(), (old) => [
+        created,
+        ...(old ?? []),
+      ]);
       toast.success("Lore entry created");
       navigate(`/app/lore/${created.id}`);
     },
@@ -41,11 +44,12 @@ export function useUpdateLore() {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Lore> }) => loreApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Lore> }) =>
+      loreApi.update(id, data),
     onSuccess: (updated) => {
       qc.setQueryData(queryKeys.lore.detail(updated.id), updated);
       qc.setQueryData<Lore[]>(queryKeys.lore.lists(), (old) =>
-        (old ?? []).map((e) => (e.id === updated.id ? updated : e))
+        (old ?? []).map((e) => (e.id === updated.id ? updated : e)),
       );
       toast.success("Changes saved");
       navigate(`/app/lore/${updated.id}`);
@@ -61,7 +65,9 @@ export function useDeleteLore() {
   return useMutation({
     mutationFn: loreApi.delete,
     onSuccess: (_, id) => {
-      qc.setQueryData<Lore[]>(queryKeys.lore.lists(), (old) => (old ?? []).filter((e) => e.id !== id));
+      qc.setQueryData<Lore[]>(queryKeys.lore.lists(), (old) =>
+        (old ?? []).filter((e) => e.id !== id),
+      );
       qc.removeQueries({ queryKey: queryKeys.lore.detail(id) });
       toast.success("Lore entry deleted");
       navigate("/app/lore");

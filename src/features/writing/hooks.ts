@@ -76,9 +76,13 @@ export function useCreateLoreFromChat() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: { title: string; content: string }) => loreApi.create(data),
+    mutationFn: (data: { title: string; content: string }) =>
+      loreApi.create(data),
     onSuccess: (created) => {
-      qc.setQueryData<Lore[]>(queryKeys.lore.lists(), (old) => [created, ...(old ?? [])]);
+      qc.setQueryData<Lore[]>(queryKeys.lore.lists(), (old) => [
+        created,
+        ...(old ?? []),
+      ]);
       toast.success(`Lore saved: ${created.title}`);
     },
     onError: (err) => toast.error(err.message),

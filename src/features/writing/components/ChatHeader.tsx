@@ -1,4 +1,11 @@
-import { ChevronDown, Menu, Settings2 } from "lucide-react";
+import {
+  ChevronDown,
+  Menu,
+  Settings2,
+  BarChart3,
+  BookPlus,
+  Download,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -8,8 +15,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Chat } from "@/types/entities";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ChapterNavigator } from "./ChapterNavigator";
+import type { Chat, Passage } from "@/types/entities";
 import type { ModelOption } from "@/config/models";
+import type { Chapter } from "../stores/chapterStore";
 
 type Props = {
   chat: Chat | undefined;
@@ -21,6 +36,12 @@ type Props = {
   onOpenSidebar?: () => void;
   isMobile?: boolean;
   isStreaming?: boolean;
+  chapters?: Chapter[];
+  passages?: Passage[];
+  onChapterSelect?: (chapter: Chapter) => void;
+  onAddChapter?: () => void;
+  onOpenChapterSummary?: () => void;
+  onOpenExport?: () => void;
 };
 
 export function ChatHeader({
@@ -33,6 +54,12 @@ export function ChatHeader({
   onOpenSidebar,
   isMobile,
   isStreaming,
+  chapters = [],
+  passages = [],
+  onChapterSelect,
+  onAddChapter,
+  onOpenChapterSummary,
+  onOpenExport,
 }: Props) {
   const title = chat?.title || (chat ? `Chat ${chat.id}` : "New chat");
   const currentModel = modelOptions.find((m) => m.id === model);
@@ -44,7 +71,7 @@ export function ChatHeader({
       acc[provider].push(m);
       return acc;
     },
-    {} as Record<string, ModelOption[]>
+    {} as Record<string, ModelOption[]>,
   );
 
   if (isMobile) {
@@ -52,12 +79,19 @@ export function ChatHeader({
       <div className="flex items-center justify-between gap-2 border-b px-3 py-2 md:hidden">
         <div className="flex items-center gap-2">
           {onOpenSidebar && (
-            <Button variant="ghost" size="sm" onClick={onOpenSidebar} className="h-8 w-8 p-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onOpenSidebar}
+              className="h-8 w-8 p-0"
+            >
               <Menu className="h-4 w-4" />
             </Button>
           )}
           <div className="min-w-0">
-            <span className="font-semibold truncate block text-sm">{title}</span>
+            <span className="font-semibold truncate block text-sm">
+              {title}
+            </span>
             <span className="text-xs text-muted-foreground truncate block">
               {currentModel?.label || model}
             </span>
@@ -66,7 +100,11 @@ export function ChatHeader({
         <div className="flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" disabled={isStreaming || !keyExists}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isStreaming || !keyExists}
+              >
                 <ChevronDown className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -87,7 +125,9 @@ export function ChatHeader({
                       <div className="flex flex-col">
                         <span>{m.label}</span>
                         {m.description && (
-                          <span className="text-xs text-muted-foreground">{m.description}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {m.description}
+                          </span>
                         )}
                       </div>
                     </DropdownMenuItem>
@@ -108,15 +148,80 @@ export function ChatHeader({
     <div className="hidden md:flex items-center justify-between gap-3 border-b px-4 py-3">
       <div className="min-w-0 flex-1">
         <div className="font-semibold truncate">{title}</div>
-        <div className="text-xs text-muted-foreground truncate">
-          {keyExists ? "Ready to chat" : "Set your API key in Settings"}
-        </div>
+        {chat && onChapterSelect && onAddChapter ? (
+          <ChapterNavigator
+            chapters={chapters}
+            currentChapter={null}
+            passages={passages}
+            onChapterSelect={onChapterSelect}
+            onAddChapter={onAddChapter}
+            className="mt-0.5"
+          />
+        ) : (
+          <div className="text-xs text-muted-foreground truncate">
+            {keyExists ? "Ready to write" : "Set your API key in Settings"}
+          </div>
+        )}
       </div>
       <div className="flex items-center gap-2">
+        <TooltipProvider delayDuration={0}>
+          {onOpenChapterSummary && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onOpenChapterSummary}
+                  className="h-8 w-8"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Project Stats</TooltipContent>
+            </Tooltip>
+          )}
+          {onAddChapter && chat && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onAddChapter}
+                  className="h-8 w-8"
+                >
+                  <BookPlus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Add Chapter</TooltipContent>
+            </Tooltip>
+          )}
+          {onOpenExport && chat && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onOpenExport}
+                  className="h-8 w-8"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Export Project</TooltipContent>
+            </Tooltip>
+          )}
+        </TooltipProvider>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" disabled={isStreaming || !keyExists} className="gap-2">
-              <span className="max-w-32 truncate">{currentModel?.label || "Select model"}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={isStreaming || !keyExists}
+              className="gap-2"
+            >
+              <span className="max-w-32 truncate">
+                {currentModel?.label || "Select model"}
+              </span>
               <ChevronDown className="h-4 w-4 shrink-0" />
             </Button>
           </DropdownMenuTrigger>
@@ -137,7 +242,9 @@ export function ChatHeader({
                     <div className="flex flex-col">
                       <span>{m.label}</span>
                       {m.description && (
-                        <span className="text-xs text-muted-foreground">{m.description}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {m.description}
+                        </span>
                       )}
                     </div>
                   </DropdownMenuItem>
@@ -146,11 +253,16 @@ export function ChatHeader({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-        <Button variant="outline" size="sm" onClick={onOpenContext} className="gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onOpenContext}
+          className="gap-2"
+        >
           <Settings2 className="h-4 w-4" />
           Context
         </Button>
       </div>
     </div>
   );
-} 
+}

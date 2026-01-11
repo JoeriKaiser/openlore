@@ -61,7 +61,9 @@ export function EntityView({
             <CardTitle className="text-center">Not Found</CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">This item doesn't exist or has been removed.</p>
+            <p className="text-muted-foreground mb-4">
+              This item doesn't exist or has been removed.
+            </p>
             <Link to={basePath}>
               <Button>Go Back</Button>
             </Link>
@@ -77,8 +79,7 @@ export function EntityView({
         <div className="flex items-start justify-between">
           <CardTitle className="text-2xl font-bold">{title}</CardTitle>
           <Badge variant="secondary" className="gap-1">
-            <Icon className="h-3 w-3" />
-            #{id}
+            <Icon className="h-3 w-3" />#{id}
           </Badge>
         </div>
       </CardHeader>

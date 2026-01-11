@@ -61,3 +61,8 @@ export interface RetrievedContext {
   characters: RetrievedCharacterItem[];
   memories: RetrievedMemoryItem[];
 }
+
+// Type aliases for creative writing terminology
+// Maintains backward compatibility with existing API
+export type Project = Chat;
+export type Passage = Message;

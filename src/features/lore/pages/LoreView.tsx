@@ -21,10 +21,21 @@ export function LoreViewPage() {
       error={error}
       content={
         <div className="prose prose-slate dark:prose-invert max-w-none">
-          <div className="whitespace-pre-wrap text-base leading-relaxed">{data?.content}</div>
+          <div className="whitespace-pre-wrap text-base leading-relaxed">
+            {data?.content}
+          </div>
         </div>
       }
-      stats={data ? [{ label: "Word count", value: data.content.split(/\s+/).filter(Boolean).length }] : []}
+      stats={
+        data
+          ? [
+              {
+                label: "Word count",
+                value: data.content.split(/\s+/).filter(Boolean).length,
+              },
+            ]
+          : []
+      }
     />
   );
 }

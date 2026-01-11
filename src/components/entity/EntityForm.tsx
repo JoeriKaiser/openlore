@@ -53,14 +53,21 @@ export function EntityForm<T extends FieldValues>({
   infoItems,
 }: Props<T>) {
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors, isDirty }, watch } = form;
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isDirty },
+    watch,
+  } = form;
   const values = watch();
   const isCreate = mode === "create";
 
   const main = (
     <Card className="overflow-hidden">
       <CardHeader className="bg-gradient-to-r from-primary/5 to-primary/10 dark:from-primary/10 dark:to-primary/20">
-        <CardTitle className="text-lg">{isCreate ? "Details" : "Edit Details"}</CardTitle>
+        <CardTitle className="text-lg">
+          {isCreate ? "Details" : "Edit Details"}
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-5">
         {fields.map((field) => (
@@ -84,7 +91,9 @@ export function EntityForm<T extends FieldValues>({
               />
             )}
             {errors[field.name] && (
-              <p className="text-xs text-destructive">{String(errors[field.name]?.message)}</p>
+              <p className="text-xs text-destructive">
+                {String(errors[field.name]?.message)}
+              </p>
             )}
           </div>
         ))}
@@ -105,7 +114,11 @@ export function EntityForm<T extends FieldValues>({
               </>
             ) : (
               <>
-                {isCreate ? <Sparkles className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+                {isCreate ? (
+                  <Sparkles className="h-4 w-4" />
+                ) : (
+                  <Save className="h-4 w-4" />
+                )}
                 {isCreate ? "Create" : "Save Changes"}
               </>
             )}
@@ -178,7 +191,10 @@ export function EntityForm<T extends FieldValues>({
         title={title}
         icon={icon}
         backTo={basePath}
-        badge={{ label: isCreate ? "New" : "Editing", icon: isCreate ? Sparkles : Save }}
+        badge={{
+          label: isCreate ? "New" : "Editing",
+          icon: isCreate ? Sparkles : Save,
+        }}
       />
       <TwoColumnLayout main={main} sidebar={sidebar} />
     </div>

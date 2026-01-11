@@ -20,8 +20,20 @@ export function LoreCreatePage() {
       basePath="/app/lore"
       form={form}
       fields={[
-        { name: "title", label: "Title", placeholder: "Enter a memorable title...", required: true },
-        { name: "content", label: "Content", type: "textarea", placeholder: "Write the lore...", rows: 12, required: true },
+        {
+          name: "title",
+          label: "Title",
+          placeholder: "Enter a memorable title...",
+          required: true,
+        },
+        {
+          name: "content",
+          label: "Content",
+          type: "textarea",
+          placeholder: "Write the lore...",
+          rows: 12,
+          required: true,
+        },
       ]}
       tips={[
         "A good title helps you quickly find entries later.",

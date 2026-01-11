@@ -20,8 +20,19 @@ export function CharacterCreatePage() {
       basePath="/app/characters"
       form={form}
       fields={[
-        { name: "name", label: "Name", placeholder: "Enter character name...", required: true },
-        { name: "bio", label: "Bio", type: "textarea", placeholder: "Describe background, personality...", rows: 8 },
+        {
+          name: "name",
+          label: "Name",
+          placeholder: "Enter character name...",
+          required: true,
+        },
+        {
+          name: "bio",
+          label: "Bio",
+          type: "textarea",
+          placeholder: "Describe background, personality...",
+          rows: 8,
+        },
       ]}
       tips={[
         "A distinctive name helps identify characters during conversations.",

@@ -7,8 +7,11 @@ import { ChatHeader } from "../components/ChatHeader";
 import { MessageList } from "../components/MessageList";
 import { Composer } from "../components/Composer";
 import { ContextPanel } from "../components/ContextPanel";
-import { RetrievedContext } from "../components/RetrievedContext";
+import { ChapterSummaryPanel } from "../components/ChapterSummaryPanel";
+import { StatsModal } from "../components/StatsModal";
+import { ExportDialog } from "../components/ExportDialog";
 import { useChatStore } from "../store";
+import { useChapterStore } from "../stores/chapterStore";
 import {
   useKeyStatus,
   useChats,
@@ -21,7 +24,18 @@ import {
 import { chatApi } from "@/lib/api";
 import { queryKeys } from "@/lib/query-client";
 import { CURATED_MODELS, DEFAULT_MODEL } from "@/config/models";
-import type { Message, RetrievedContext as RetrievedContextType } from "@/types/entities";
+import {
+  buildLengthInstruction,
+  buildStyleInstruction,
+} from "@/config/promptTemplates";
+import {
+  generateChapterTitle,
+  getNextChapterNumber,
+} from "../utils/chapterUtils";
+import type {
+  Message,
+  RetrievedContext as RetrievedContextType,
+} from "@/types/entities";
 
 const draftKey = (id: number | null) => (id == null ? "new" : String(id));
 
@@ -40,9 +54,15 @@ export function ChatPage() {
     drafts,
     setDraft,
     clearDraft,
+    composerConfig,
+    setComposerLength,
+    setComposerStyle,
   } = useChatStore();
 
-  const currentDraftKey = useMemo(() => draftKey(selectedChatId), [selectedChatId]);
+  const currentDraftKey = useMemo(
+    () => draftKey(selectedChatId),
+    [selectedChatId],
+  );
   const draft = drafts[currentDraftKey] ?? "";
 
   const { data: keyStatus } = useKeyStatus();
@@ -51,7 +71,8 @@ export function ChatPage() {
   const { data: characters = [] } = useCharacters();
   const { data: loreEntries = [] } = useLoreEntries();
   const { mutate: deleteChat, isPending: isDeleting } = useDeleteChat();
-  const { mutate: createLore, isPending: isSavingLore } = useCreateLoreFromChat();
+  const { mutate: createLore, isPending: isSavingLore } =
+    useCreateLoreFromChat();
 
   const [model, setModel] = useState(DEFAULT_MODEL);
   const [system, setSystem] = useState("");
@@ -60,17 +81,45 @@ export function ChatPage() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [streamReasoning, setStreamReasoning] = useState("");
-  const [streamContext, setStreamContext] = useState<RetrievedContextType | null>(null);
-  const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(null);
+  const [streamContext, setStreamContext] =
+    useState<RetrievedContextType | null>(null);
+  const [optimisticMessage, setOptimisticMessage] = useState<Message | null>(
+    null,
+  );
   const [atBottom, setAtBottom] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<number | null>(null);
   const [newMessageCount, setNewMessageCount] = useState(0);
+  const [showChapterSummary, setShowChapterSummary] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+
+  // Chapter store
+  const {
+    getChapters,
+    addChapter,
+    updateChapter,
+    deleteChapter: removeChapter,
+  } = useChapterStore();
+
+  const chapters = useMemo(
+    () => (selectedChatId ? getChapters(selectedChatId) : []),
+    [selectedChatId, getChapters],
+  );
 
   const keyExists = !!keyStatus?.exists;
-  const currentChat = useMemo(() => chats.find((c) => c.id === selectedChatId), [chats, selectedChatId]);
+  const currentChat = useMemo(
+    () => chats.find((c) => c.id === selectedChatId),
+    [chats, selectedChatId],
+  );
   const modelOptions = useMemo(
-    () => CURATED_MODELS.map((m) => ({ id: m.id, label: m.label, description: m.description, provider: m.provider })),
-    []
+    () =>
+      CURATED_MODELS.map((m) => ({
+        id: m.id,
+        label: m.label,
+        description: m.description,
+        provider: m.provider,
+      })),
+    [],
   );
 
   const allMessages = useMemo(() => {
@@ -94,7 +143,10 @@ export function ChatPage() {
   }, [messages, optimisticMessage, streamText, streamReasoning]);
 
   const scrollToBottom = useCallback(() => {
-    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
+    listRef.current?.scrollTo({
+      top: listRef.current.scrollHeight,
+      behavior: "smooth",
+    });
     setAtBottom(true);
     setNewMessageCount(0);
   }, []);
@@ -133,7 +185,48 @@ export function ChatPage() {
     (title: string, content: string) => {
       createLore({ title, content });
     },
-    [createLore]
+    [createLore],
+  );
+
+  const handleAddChapter = useCallback(() => {
+    if (!selectedChatId || messages.length === 0) {
+      toast.error("Add some content before creating a chapter");
+      return;
+    }
+    // Get the last message ID as the chapter start
+    const lastMessage = messages[messages.length - 1];
+    const chapterNumber = getNextChapterNumber(chapters);
+    const title = generateChapterTitle(chapterNumber);
+    addChapter(selectedChatId, title, lastMessage.id);
+    toast.success(`Added ${title}`);
+  }, [selectedChatId, messages, chapters, addChapter]);
+
+  const handleEditChapter = useCallback(
+    (chapterId: string, title: string) => {
+      if (!selectedChatId) return;
+      updateChapter(selectedChatId, chapterId, { title });
+    },
+    [selectedChatId, updateChapter],
+  );
+
+  const handleDeleteChapter = useCallback(
+    (chapterId: string) => {
+      if (!selectedChatId) return;
+      removeChapter(selectedChatId, chapterId);
+      toast.success("Chapter removed");
+    },
+    [selectedChatId, removeChapter],
+  );
+
+  const handleChapterSelect = useCallback(
+    (chapter: { startPassageId: number }) => {
+      // Find the message element and scroll to it
+      const el = document.getElementById(`passage-${chapter.startPassageId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    },
+    [],
   );
 
   const send = useCallback(async () => {
@@ -161,11 +254,20 @@ export function ChatPage() {
 
     const chatSnapshot = selectedChatId;
 
+    // Build enhanced system prompt with length and style instructions
+    const lengthInstruction = buildLengthInstruction(composerConfig.length);
+    const styleInstruction = composerConfig.style
+      ? buildStyleInstruction(composerConfig.style)
+      : "";
+    const enhancedSystem = [system.trim(), lengthInstruction, styleInstruction]
+      .filter(Boolean)
+      .join("\n\n");
+
     cancelRef.current = chatApi.stream({
       chatId: chatSnapshot ?? undefined,
       model,
       message: content,
-      system: system.trim() || undefined,
+      system: enhancedSystem || undefined,
       characterId: characterId ?? undefined,
       loreIds: loreIds.length > 0 ? loreIds : undefined,
       onContext: (ctx) => setStreamContext(ctx),
@@ -183,7 +285,9 @@ export function ChatPage() {
         }
 
         await refetchChats();
-        await qc.invalidateQueries({ queryKey: queryKeys.chats.messages(data.chatId) });
+        await qc.invalidateQueries({
+          queryKey: queryKeys.chats.messages(data.chatId),
+        });
 
         if (!atBottom) {
           setNewMessageCount((c) => c + 1);
@@ -217,6 +321,7 @@ export function ChatPage() {
     qc,
     scrollToBottom,
     atBottom,
+    composerConfig,
   ]);
 
   useEffect(() => {
@@ -241,7 +346,14 @@ export function ChatPage() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [isStreaming, showContext, showSidebar, setShowContext, setShowSidebar, stopStreaming]);
+  }, [
+    isStreaming,
+    showContext,
+    showSidebar,
+    setShowContext,
+    setShowSidebar,
+    stopStreaming,
+  ]);
 
   return (
     <div className="h-[calc(100dvh-6rem)] overflow-hidden rounded-xl border bg-background shadow-sm">
@@ -286,6 +398,12 @@ export function ChatPage() {
             keyExists={keyExists}
             onOpenContext={() => setShowContext(true)}
             isStreaming={isStreaming}
+            chapters={chapters}
+            passages={messages}
+            onChapterSelect={handleChapterSelect}
+            onAddChapter={handleAddChapter}
+            onOpenChapterSummary={() => setShowChapterSummary(true)}
+            onOpenExport={() => setShowExport(true)}
           />
 
           <MessageList
@@ -299,6 +417,9 @@ export function ChatPage() {
             atBottom={atBottom}
             onScrollToBottom={scrollToBottom}
             newMessageCount={newMessageCount}
+            chapters={chapters}
+            onEditChapter={handleEditChapter}
+            onDeleteChapter={handleDeleteChapter}
           />
 
           <Composer
@@ -310,9 +431,13 @@ export function ChatPage() {
             disabled={!keyExists || !model}
             placeholder={
               !keyExists
-                ? "Set your API key in Settings to start chatting"
-                : "Message..."
+                ? "Set your API key in Settings to start writing"
+                : "Describe what happens next..."
             }
+            length={composerConfig.length}
+            onLengthChange={setComposerLength}
+            style={composerConfig.style}
+            onStyleChange={setComposerStyle}
           />
 
           <ContextPanel
@@ -335,11 +460,35 @@ export function ChatPage() {
         </section>
       </div>
 
+      <ChapterSummaryPanel
+        open={showChapterSummary}
+        onClose={() => setShowChapterSummary(false)}
+        chapters={chapters}
+        passages={messages}
+        onChapterSelect={handleChapterSelect}
+      />
+
+      <StatsModal
+        open={showStats}
+        onClose={() => setShowStats(false)}
+        chapters={chapters}
+        passages={messages}
+        projectTitle={currentChat?.title ?? "Untitled Project"}
+      />
+
+      <ExportDialog
+        open={showExport}
+        onClose={() => setShowExport(false)}
+        chapters={chapters}
+        passages={messages}
+        projectTitle={currentChat?.title ?? "Untitled Project"}
+      />
+
       <ConfirmDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Delete Chat"
-        description="This will permanently delete this chat and all its messages."
+        title="Delete Project"
+        description="This will permanently delete this project and all its passages."
         confirmLabel="Delete"
         variant="destructive"
         onConfirm={() => {

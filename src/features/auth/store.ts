@@ -10,7 +10,11 @@ type AuthState = {
 };
 
 type AuthActions = {
-  register: (p: { email: string; name: string; password: string }) => Promise<void>;
+  register: (p: {
+    email: string;
+    name: string;
+    password: string;
+  }) => Promise<void>;
   login: (p: { email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;

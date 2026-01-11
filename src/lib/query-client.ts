@@ -6,7 +6,8 @@ export const queryClient = new QueryClient({
       staleTime: 5 * 60 * 1000,
       retry: (count, error) => {
         const status = (error as { status?: number })?.status;
-        if (status && status >= 400 && status < 500 && status !== 401) return false;
+        if (status && status >= 400 && status < 500 && status !== 401)
+          return false;
         return count < 3;
       },
     },
@@ -18,12 +19,14 @@ export const queryKeys = {
   lore: {
     all: ["lore"] as const,
     lists: () => [...queryKeys.lore.all, "list"] as const,
-    detail: (id: number | string) => [...queryKeys.lore.all, "detail", id] as const,
+    detail: (id: number | string) =>
+      [...queryKeys.lore.all, "detail", id] as const,
   },
   characters: {
     all: ["characters"] as const,
     lists: () => [...queryKeys.characters.all, "list"] as const,
-    detail: (id: number | string) => [...queryKeys.characters.all, "detail", id] as const,
+    detail: (id: number | string) =>
+      [...queryKeys.characters.all, "detail", id] as const,
   },
   ai: {
     models: ["ai", "models"] as const,
@@ -33,6 +36,7 @@ export const queryKeys = {
     all: ["chats"] as const,
     lists: () => [...queryKeys.chats.all, "list"] as const,
     detail: (id: number) => [...queryKeys.chats.all, "detail", id] as const,
-    messages: (id: number) => [...queryKeys.chats.detail(id), "messages"] as const,
+    messages: (id: number) =>
+      [...queryKeys.chats.detail(id), "messages"] as const,
   },
 };

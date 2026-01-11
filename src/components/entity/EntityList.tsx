@@ -53,13 +53,19 @@ export function EntityList<T extends EntityItem>({
 
     if (term) {
       result = items.filter((item) =>
-        searchFields.some((field) => String(item[field] ?? "").toLowerCase().includes(term))
+        searchFields.some((field) =>
+          String(item[field] ?? "")
+            .toLowerCase()
+            .includes(term),
+        ),
       );
     }
 
     return [...result].sort((a, b) => {
       if (sortBy === "date") {
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+        return (
+          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+        );
       }
       return String(a[sortBy]).localeCompare(String(b[sortBy]));
     });
@@ -143,7 +149,9 @@ export function EntityList<T extends EntityItem>({
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filtered.map((item) => {
-            const desc = descriptionField ? String(item[descriptionField] ?? "") : undefined;
+            const desc = descriptionField
+              ? String(item[descriptionField] ?? "")
+              : undefined;
             return (
               <EntityCard
                 key={item.id}
@@ -152,7 +160,9 @@ export function EntityList<T extends EntityItem>({
                 description={desc}
                 basePath={basePath}
                 updatedAt={item.updatedAt}
-                wordCount={desc ? desc.split(/\s+/).filter(Boolean).length : undefined}
+                wordCount={
+                  desc ? desc.split(/\s+/).filter(Boolean).length : undefined
+                }
               />
             );
           })}
@@ -165,14 +175,21 @@ export function EntityList<T extends EntityItem>({
                     icon={Icon}
                     title={emptyState.title}
                     description={emptyState.description}
-                    action={{ label: "Create First", onClick: () => {}, icon: Plus }}
+                    action={{
+                      label: "Create First",
+                      onClick: () => {},
+                      icon: Plus,
+                    }}
                   />
                 ) : (
                   <EmptyState
                     icon={Search}
                     title="No matches"
                     description="Try a different search term"
-                    action={{ label: "Clear Search", onClick: () => setQuery("") }}
+                    action={{
+                      label: "Clear Search",
+                      onClick: () => setQuery(""),
+                    }}
                   />
                 )}
               </CardContent>

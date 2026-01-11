@@ -28,7 +28,10 @@ export function useCreateCharacter() {
   return useMutation({
     mutationFn: charactersApi.create,
     onSuccess: (created) => {
-      qc.setQueryData<Character[]>(queryKeys.characters.lists(), (old) => [created, ...(old ?? [])]);
+      qc.setQueryData<Character[]>(queryKeys.characters.lists(), (old) => [
+        created,
+        ...(old ?? []),
+      ]);
       toast.success("Character created");
       navigate(`/app/characters/${created.id}`);
     },
@@ -41,11 +44,12 @@ export function useUpdateCharacter() {
   const navigate = useNavigate();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Character> }) => charactersApi.update(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Character> }) =>
+      charactersApi.update(id, data),
     onSuccess: (updated) => {
       qc.setQueryData(queryKeys.characters.detail(updated.id), updated);
       qc.setQueryData<Character[]>(queryKeys.characters.lists(), (old) =>
-        (old ?? []).map((c) => (c.id === updated.id ? updated : c))
+        (old ?? []).map((c) => (c.id === updated.id ? updated : c)),
       );
       toast.success("Changes saved");
       navigate(`/app/characters/${updated.id}`);
@@ -61,7 +65,9 @@ export function useDeleteCharacter() {
   return useMutation({
     mutationFn: charactersApi.delete,
     onSuccess: (_, id) => {
-      qc.setQueryData<Character[]>(queryKeys.characters.lists(), (old) => (old ?? []).filter((c) => c.id !== id));
+      qc.setQueryData<Character[]>(queryKeys.characters.lists(), (old) =>
+        (old ?? []).filter((c) => c.id !== id),
+      );
       qc.removeQueries({ queryKey: queryKeys.characters.detail(id) });
       toast.success("Character deleted");
       navigate("/app/characters");

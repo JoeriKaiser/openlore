@@ -1,4 +1,11 @@
-import { Book, Bot, Home, LogOut, Settings, UsersRound } from "lucide-react";
+import {
+  Book,
+  Home,
+  LogOut,
+  PenTool,
+  Settings,
+  UsersRound,
+} from "lucide-react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/features/auth/store";
@@ -8,7 +15,7 @@ const nav = [
   { to: "/app", label: "Dashboard", icon: Home },
   { to: "/app/lore", label: "Lore", icon: Book },
   { to: "/app/characters", label: "Characters", icon: UsersRound },
-  { to: "/app/chat", label: "Chat", icon: Bot },
+  { to: "/app/write", label: "Write", icon: PenTool },
   { to: "/app/settings", label: "Settings", icon: Settings },
 ];
 
@@ -24,7 +31,7 @@ export function AppShell() {
   return (
     <div className="flex min-h-screen bg-background">
       <header className="fixed top-0 z-40 flex h-14 w-full items-center justify-between border-b bg-background px-4 lg:hidden">
-        <span className="font-semibold">OpenLore</span>
+        <span className="font-semibold">F-Lore</span>
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <Button
@@ -41,7 +48,7 @@ export function AppShell() {
 
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-r">
         <div className="flex h-16 items-center border-b px-6 font-semibold">
-          OpenLore
+          F-Lore
         </div>
         <nav className="flex-1 space-y-1 p-4">
           {nav.map(({ to, label, icon: Icon }) => (
@@ -53,7 +60,7 @@ export function AppShell() {
                 `flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-accent"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 }`
               }
             >

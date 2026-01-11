@@ -5,7 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "lucide-react";
 import { EntityForm } from "@/components/entity/EntityForm";
 import { ConfirmDialog } from "@/components/feedback/ConfirmDialog";
-import { useCharacterDetail, useUpdateCharacter, useDeleteCharacter } from "../hooks";
+import {
+  useCharacterDetail,
+  useUpdateCharacter,
+  useDeleteCharacter,
+} from "../hooks";
 import { characterSchema, type CharacterFormData } from "../types";
 
 export function CharacterEditPage() {
@@ -26,11 +30,17 @@ export function CharacterEditPage() {
   }, [data, form]);
 
   if (isLoading || !data) {
-    return <div className="flex items-center justify-center p-8">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center p-8">Loading...</div>
+    );
   }
 
   if (error) {
-    return <div className="flex items-center justify-center p-8">Error loading character</div>;
+    return (
+      <div className="flex items-center justify-center p-8">
+        Error loading character
+      </div>
+    );
   }
 
   return (
@@ -42,16 +52,35 @@ export function CharacterEditPage() {
         basePath="/app/characters"
         form={form}
         fields={[
-          { name: "name", label: "Name", placeholder: "Enter name...", required: true },
-          { name: "bio", label: "Bio", type: "textarea", placeholder: "Write bio...", rows: 8 },
+          {
+            name: "name",
+            label: "Name",
+            placeholder: "Enter name...",
+            required: true,
+          },
+          {
+            name: "bio",
+            label: "Bio",
+            type: "textarea",
+            placeholder: "Write bio...",
+            rows: 8,
+          },
         ]}
-        onSubmit={(formData) => update({ id: characterId, data: { name: formData.name, bio: formData.bio || null } })}
+        onSubmit={(formData) =>
+          update({
+            id: characterId,
+            data: { name: formData.name, bio: formData.bio || null },
+          })
+        }
         onDelete={() => setShowDelete(true)}
         isPending={isPending}
         isDeleting={isDeleting}
         infoItems={[
           { label: "ID", value: `#${data.id}` },
-          { label: "Created", value: new Date(data.createdAt).toLocaleDateString() },
+          {
+            label: "Created",
+            value: new Date(data.createdAt).toLocaleDateString(),
+          },
         ]}
       />
       <ConfirmDialog

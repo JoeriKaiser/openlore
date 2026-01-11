@@ -64,7 +64,7 @@ export const Message = memo(function Message({
   const [loreTitle, setLoreTitle] = useState("");
   const [loreContent, setLoreContent] = useState("");
   const [reasoningExpanded, setReasoningExpanded] = useState(false);
-  
+
   const isUser = message.role === "user";
   const hasReasoning = !!message.reasoning;
 
@@ -127,10 +127,12 @@ export const Message = memo(function Message({
                 )}
                 <Brain className="h-3 w-3" />
                 <span>
-                  {isStreaming && !message.content ? "Thinking..." : "Reasoning"}
+                  {isStreaming && !message.content
+                    ? "Thinking..."
+                    : "Reasoning"}
                 </span>
               </button>
-              
+
               {reasoningExpanded && (
                 <div className="mt-2 rounded-lg border border-border/50 bg-muted/30 p-3">
                   <div className="text-xs text-muted-foreground whitespace-pre-wrap font-mono leading-relaxed">
@@ -144,9 +146,15 @@ export const Message = memo(function Message({
             </div>
           )}
 
-          <div className="prose prose-slate dark:prose-invert max-w-none text-sm">
+          <div
+            className={`prose prose-slate dark:prose-invert max-w-none ${
+              isUser ? "text-sm" : "prose-creative"
+            }`}
+          >
             {isUser ? (
-              <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
+              <p className="whitespace-pre-wrap leading-relaxed">
+                {message.content}
+              </p>
             ) : message.content ? (
               <>
                 <MarkdownRenderer content={message.content} />
@@ -279,7 +287,9 @@ export const Message = memo(function Message({
             </Button>
             <Button
               onClick={handleSaveLore}
-              disabled={!loreTitle.trim() || !loreContent.trim() || isSavingLore}
+              disabled={
+                !loreTitle.trim() || !loreContent.trim() || isSavingLore
+              }
               className="gap-2"
             >
               {isSavingLore ? (

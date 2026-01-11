@@ -1,9 +1,18 @@
-import type { Character, Chat, Lore, Message, RetrievedContext } from "@/types/entities";
+import type {
+  Character,
+  Chat,
+  Lore,
+  Message,
+  RetrievedContext,
+} from "@/types/entities";
 import { ApiError } from "@/types/api";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
-async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
   const res = await fetch(`${API_BASE}${endpoint}`, {
     credentials: "include",
     headers: { "Content-Type": "application/json", ...options.headers },
@@ -16,15 +25,18 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     ? await res.json().catch(() => ({}))
     : undefined;
 
-  if (!res.ok) throw new ApiError(data?.error || `HTTP ${res.status}`, res.status, data);
+  if (!res.ok)
+    throw new ApiError(data?.error || `HTTP ${res.status}`, res.status, data);
 
   return data as T;
 }
 
 const api = {
   get: <T>(url: string) => request<T>(url),
-  post: <T>(url: string, body: unknown) => request<T>(url, { method: "POST", body: JSON.stringify(body) }),
-  patch: <T>(url: string, body: unknown) => request<T>(url, { method: "PATCH", body: JSON.stringify(body) }),
+  post: <T>(url: string, body: unknown) =>
+    request<T>(url, { method: "POST", body: JSON.stringify(body) }),
+  patch: <T>(url: string, body: unknown) =>
+    request<T>(url, { method: "PATCH", body: JSON.stringify(body) }),
   delete: (url: string) => request<void>(url, { method: "DELETE" }),
 };
 
@@ -33,7 +45,8 @@ function createResource<T>(path: string) {
     list: () => api.get<T[]>(path),
     get: (id: number | string) => api.get<T>(`${path}/${id}`),
     create: (data: Partial<T>) => api.post<T>(path, data),
-    update: (id: number | string, data: Partial<T>) => api.patch<T>(`${path}/${id}`, data),
+    update: (id: number | string, data: Partial<T>) =>
+      api.patch<T>(`${path}/${id}`, data),
     delete: (id: number | string) => api.delete(`${path}/${id}`),
   };
 }
@@ -42,16 +55,29 @@ export const loreApi = createResource<Lore>("/lore");
 export const charactersApi = createResource<Character>("/characters");
 
 export const authApi = {
-  register: (body: { email: string; name: string; password: string }) => api.post("/auth/register", body),
-  login: (body: { email: string; password: string }) => api.post("/auth/login", body),
+  register: (body: { email: string; name: string; password: string }) =>
+    api.post("/auth/register", body),
+  login: (body: { email: string; password: string }) =>
+    api.post("/auth/login", body),
   logout: () => api.post("/auth/logout", {}),
-  session: () => api.get<{ user: { id: string; email: string; name: string } | null }>("/auth/session"),
+  session: () =>
+    api.get<{ user: { id: string; email: string; name: string } | null }>(
+      "/auth/session",
+    ),
 };
 
 export const aiApi = {
-  getModels: () => api.get<{ data?: Array<{ id: string; name?: string }> }>("/ai/models"),
-  getKeyStatus: () => api.get<{ exists: boolean; last4: string | null }>("/ai/providers/openrouter/key"),
-  setKey: (key: string) => api.post<{ ok: boolean; last4: string | null }>("/ai/providers/openrouter/key", { key }),
+  getModels: () =>
+    api.get<{ data?: Array<{ id: string; name?: string }> }>("/ai/models"),
+  getKeyStatus: () =>
+    api.get<{ exists: boolean; last4: string | null }>(
+      "/ai/providers/openrouter/key",
+    ),
+  setKey: (key: string) =>
+    api.post<{ ok: boolean; last4: string | null }>(
+      "/ai/providers/openrouter/key",
+      { key },
+    ),
   deleteKey: () => api.delete("/ai/providers/openrouter/key"),
   extractLore: (params: {
     chatId: number;
@@ -59,13 +85,18 @@ export const aiApi = {
     save?: boolean;
     title?: string;
     content?: string;
-  }) => api.post<{ suggestion?: { title: string; content: string }; saved?: Lore }>("/ai/extract-lore", params),
+  }) =>
+    api.post<{ suggestion?: { title: string; content: string }; saved?: Lore }>(
+      "/ai/extract-lore",
+      params,
+    ),
 };
 
 export const chatApi = {
   list: () => api.get<Chat[]>("/chats"),
   messages: (id: number) => api.get<Message[]>(`/chats/${id}/messages`),
-  update: (id: number, data: Partial<Chat>) => api.patch<Chat>(`/chats/${id}`, data),
+  update: (id: number, data: Partial<Chat>) =>
+    api.patch<Chat>(`/chats/${id}`, data),
   delete: (id: number) => api.delete(`/chats/${id}`),
   stream: (params: {
     chatId?: number;
@@ -77,7 +108,12 @@ export const chatApi = {
     onContext?: (context: RetrievedContext) => void;
     onReasoning?: (delta: string) => void;
     onChunk?: (delta: string) => void;
-    onDone?: (data: { chatId: number; messageId: number | null; preview: string; hasReasoning?: boolean }) => void;
+    onDone?: (data: {
+      chatId: number;
+      messageId: number | null;
+      preview: string;
+      hasReasoning?: boolean;
+    }) => void;
     onError?: (err: string) => void;
   }) => {
     const controller = new AbortController();
@@ -130,17 +166,21 @@ export const chatApi = {
 
             try {
               const obj = JSON.parse(dataLine);
-              if (eventName === "context") params.onContext?.(obj as RetrievedContext);
-              else if (eventName === "reasoning" && obj?.delta) params.onReasoning?.(obj.delta);
-              else if (eventName === "chunk" && obj?.delta) params.onChunk?.(obj.delta);
+              if (eventName === "context")
+                params.onContext?.(obj as RetrievedContext);
+              else if (eventName === "reasoning" && obj?.delta)
+                params.onReasoning?.(obj.delta);
+              else if (eventName === "chunk" && obj?.delta)
+                params.onChunk?.(obj.delta);
               else if (eventName === "done") params.onDone?.(obj);
-              else if (eventName === "error") params.onError?.(obj?.message ?? "Stream error");
-            } catch {
-            }
+              else if (eventName === "error")
+                params.onError?.(obj?.message ?? "Stream error");
+            } catch {}
           }
         }
       } catch (e) {
-        if ((e as Error)?.name !== "AbortError") params.onError?.((e as Error)?.message || "Stream failed");
+        if ((e as Error)?.name !== "AbortError")
+          params.onError?.((e as Error)?.message || "Stream failed");
       }
     })();
 

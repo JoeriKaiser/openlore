@@ -6,10 +6,13 @@ export function ThemeToggle() {
   const { theme, setTheme } = useThemeStore();
 
   const toggle = () =>
-    setTheme(theme === "light" ? "dark" : theme === "dark" ? "system" : "light");
+    setTheme(
+      theme === "light" ? "dark" : theme === "dark" ? "system" : "light",
+    );
 
   const Icon = theme === "light" ? Sun : theme === "dark" ? Moon : Monitor;
-  const label = theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System";
+  const label =
+    theme === "light" ? "Light" : theme === "dark" ? "Dark" : "System";
 
   return (
     <Button

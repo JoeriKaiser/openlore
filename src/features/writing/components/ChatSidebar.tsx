@@ -15,18 +15,39 @@ type Props = {
   onClose?: () => void;
 };
 
-export function ChatSidebar({ chats, selectedId, onSelect, onNew, onDelete, onOpenContext, keyExists, isOpen, onClose }: Props) {
+export function ChatSidebar({
+  chats,
+  selectedId,
+  onSelect,
+  onNew,
+  onDelete,
+  onOpenContext,
+  keyExists,
+  isOpen,
+  onClose,
+}: Props) {
   const [search, setSearch] = useState("");
 
   const filtered = search.trim()
-    ? chats.filter((c) => (c.title || `Chat ${c.id}`).toLowerCase().includes(search.toLowerCase()))
+    ? chats.filter((c) =>
+        (c.title || `Chat ${c.id}`)
+          .toLowerCase()
+          .includes(search.toLowerCase()),
+      )
     : chats;
 
   const content = (
     <>
       <div className="flex items-center gap-2 p-3 border-b">
-        <Input placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} className="text-sm" />
-        <Button size="sm" onClick={onNew}>New</Button>
+        <Input
+          placeholder="Search..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="text-sm"
+        />
+        <Button size="sm" onClick={onNew}>
+          New
+        </Button>
       </div>
 
       <div className="flex-1 overflow-auto p-2">
@@ -66,15 +87,21 @@ export function ChatSidebar({ chats, selectedId, onSelect, onNew, onDelete, onOp
       </div>
 
       <div className="flex items-center justify-between gap-2 border-t p-3">
-        <span className="text-xs text-muted-foreground">{keyExists ? "API key set" : "No API key"}</span>
-        <Button variant="outline" size="sm" onClick={onOpenContext}>Context</Button>
+        <span className="text-xs text-muted-foreground">
+          {keyExists ? "API key set" : "No API key"}
+        </span>
+        <Button variant="outline" size="sm" onClick={onOpenContext}>
+          Context
+        </Button>
       </div>
     </>
   );
 
   return (
     <>
-      <aside className="hidden md:flex h-full w-72 shrink-0 flex-col border-r">{content}</aside>
+      <aside className="hidden md:flex h-full w-72 shrink-0 flex-col border-r">
+        {content}
+      </aside>
 
       {isOpen && (
         <div className="fixed inset-0 z-40 md:hidden">

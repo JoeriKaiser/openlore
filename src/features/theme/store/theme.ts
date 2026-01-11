@@ -41,8 +41,8 @@ export const useThemeStore = create<State>()(
           state.resolvedTheme = resolved;
         }
       },
-    }
-  )
+    },
+  ),
 );
 
 if (typeof window !== "undefined") {

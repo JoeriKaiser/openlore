@@ -13,7 +13,13 @@ type Props = {
   actions?: React.ReactNode;
 };
 
-export function PageHeader({ title, icon: Icon, badge, backTo, actions }: Props) {
+export function PageHeader({
+  title,
+  icon: Icon,
+  badge,
+  backTo,
+  actions,
+}: Props) {
   const navigate = useNavigate();
 
   return (
@@ -21,7 +27,12 @@ export function PageHeader({ title, icon: Icon, badge, backTo, actions }: Props)
       <div className="flex items-center gap-2">
         {backTo && (
           <>
-            <Button variant="ghost" size="sm" onClick={() => navigate(backTo)} className="gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(backTo)}
+              className="gap-1"
+            >
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
