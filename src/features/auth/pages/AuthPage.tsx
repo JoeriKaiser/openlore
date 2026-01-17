@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { useForm, FormProvider, type SubmitHandler, type Path } from "react-hook-form";
@@ -22,6 +22,14 @@ export function AuthPage() {
   const location = useLocation();
   const { signUp, signIn, isLoading, clearError } = useAuthStore();
   const [isSignUp, setIsSignUp] = useState(false);
+  const registrationEnabled = import.meta.env.VITE_REGISTRATION_ENABLED !== "false";
+
+  // Ensure we're on login page if registration is disabled
+  useEffect(() => {
+    if (!registrationEnabled && isSignUp) {
+      setIsSignUp(false);
+    }
+  }, [registrationEnabled, isSignUp]);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -71,6 +79,7 @@ export function AuthPage() {
   };
 
   const toggleMode = () => {
+    if (!registrationEnabled) return; // Don't allow toggling if registration is disabled
     setIsSignUp(!isSignUp);
     clearError();
     if (isSignUp) {
@@ -156,26 +165,30 @@ export function AuthPage() {
             </FormProvider>
           )}
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                {isSignUp ? "Already have an account?" : "New to OpenLore?"}
-              </span>
-            </div>
-          </div>
+          {registrationEnabled && (
+            <>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    {isSignUp ? "Already have an account?" : "New to OpenLore?"}
+                  </span>
+                </div>
+              </div>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={toggleMode}
-            disabled={isLoading}
-          >
-            {isSignUp ? "Sign In Instead" : "Create Account"}
-          </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={toggleMode}
+                disabled={isLoading}
+              >
+                {isSignUp ? "Sign In Instead" : "Create Account"}
+              </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
