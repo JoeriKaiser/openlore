@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { startRegistration, startAuthentication } from "@simplewebauthn/browser";
 import { authApi } from "@/lib/api";
 import type { User } from "@/types/entities";
 
@@ -10,12 +11,10 @@ type AuthState = {
 };
 
 type AuthActions = {
-  register: (p: {
-    email: string;
-    name: string;
-    password: string;
-  }) => Promise<void>;
-  login: (p: { email: string; password: string }) => Promise<void>;
+  register: () => Promise<void>;
+  login: () => Promise<void>;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearError: () => void;
@@ -29,11 +28,22 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
 
   clearError: () => set({ error: null }),
 
-  register: async (params) => {
+  register: async () => {
     set({ isLoading: true, error: null });
     try {
-      await authApi.register(params);
-      await get().checkAuth();
+      const session = await authApi.registerStart();
+
+      if (!session.user) {
+        throw new Error("Registration failed: No user created");
+      }
+
+      const options = await authApi.passkeyRegisterOptions();
+
+      const credential = await startRegistration({ optionsJSON: options });
+
+      await authApi.passkeyRegister(credential);
+
+      set({ user: session.user as User, isLoading: false });
     } catch (e) {
       const msg = (e as Error)?.message || "Registration failed";
       set({ error: msg, isLoading: false });
@@ -41,13 +51,42 @@ export const useAuthStore = create<AuthState & AuthActions>()((set, get) => ({
     }
   },
 
-  login: async (params) => {
+  login: async () => {
     set({ isLoading: true, error: null });
     try {
-      await authApi.login(params);
+      const options = await authApi.passkeyLoginOptions();
+
+      const credential = await startAuthentication({ optionsJSON: options });
+
+      await authApi.passkeyLogin(credential);
+
       await get().checkAuth();
     } catch (e) {
       const msg = (e as Error)?.message || "Login failed";
+      set({ error: msg, isLoading: false });
+      throw e;
+    }
+  },
+
+  signUp: async (email: string, password: string, name: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authApi.signUp(email, password, name);
+      set({ user: response.user as User, isLoading: false });
+    } catch (e) {
+      const msg = (e as Error)?.message || "Sign up failed";
+      set({ error: msg, isLoading: false });
+      throw e;
+    }
+  },
+
+  signIn: async (email: string, password: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await authApi.signIn(email, password);
+      set({ user: response.user as User, isLoading: false });
+    } catch (e) {
+      const msg = (e as Error)?.message || "Sign in failed";
       set({ error: msg, isLoading: false });
       throw e;
     }

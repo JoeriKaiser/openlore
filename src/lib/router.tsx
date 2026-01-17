@@ -8,8 +8,7 @@ import {
   useLocation,
 } from "react-router-dom";
 import { AppShell } from "@/components/AppShell";
-import { LoginPage } from "@/features/auth/pages/Login";
-import { RegisterPage } from "@/features/auth/pages/Register";
+import { AuthPage } from "@/features/auth/pages/AuthPage";
 import { useAuthStore } from "@/features/auth/store";
 import { CharacterCreatePage } from "@/features/characters/pages/CharacterCreate";
 import { CharacterEditPage } from "@/features/characters/pages/CharacterEdit";
@@ -64,10 +63,6 @@ function Dashboard() {
   );
 }
 
-const isRegistrationEnabled =
-  import.meta.env.VITE_REGISTRATION_ENABLED === "true";
-export { isRegistrationEnabled };
-
 export function AppRouter() {
   return (
     <BrowserRouter>
@@ -77,20 +72,10 @@ export function AppRouter() {
             path="/login"
             element={
               <PublicOnly>
-                <LoginPage />
+                <AuthPage />
               </PublicOnly>
             }
           />
-          {isRegistrationEnabled && (
-            <Route
-              path="/register"
-              element={
-                <PublicOnly>
-                  <RegisterPage />
-                </PublicOnly>
-              }
-            />
-          )}
           <Route
             path="/app"
             element={

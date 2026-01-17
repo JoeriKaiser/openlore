@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { aiApi } from "@/lib/api";
 import { queryKeys } from "@/lib/query-client";
 
@@ -50,11 +50,12 @@ export function SettingsPage() {
                 : "No key set"}
           </p>
           <div className="flex gap-2">
-            <Input
-              type="password"
+            <PasswordInput
               placeholder="sk-or-v1-..."
               value={key}
-              onChange={(e) => setKey(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setKey(e.target.value)
+              }
             />
             <Button
               onClick={() => saveKey.mutate(key)}

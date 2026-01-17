@@ -6,6 +6,12 @@ import type {
   RetrievedContext,
 } from "@/types/entities";
 import { ApiError } from "@/types/api";
+import type {
+  PublicKeyCredentialCreationOptionsJSON,
+  PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON,
+  AuthenticationResponseJSON,
+} from "@simplewebauthn/browser";
 
 const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
@@ -55,15 +61,34 @@ export const loreApi = createResource<Lore>("/lore");
 export const charactersApi = createResource<Character>("/characters");
 
 export const authApi = {
-  register: (body: { email: string; name: string; password: string }) =>
-    api.post("/auth/register", body),
-  login: (body: { email: string; password: string }) =>
-    api.post("/auth/login", body),
   logout: () => api.post("/auth/logout", {}),
   session: () =>
-    api.get<{ user: { id: string; email: string; name: string } | null }>(
+    api.get<{ user: { id: string; email: string | null; name: string } | null }>(
       "/auth/session",
     ),
+  // Email/Password Auth
+  signUp: (email: string, password: string, name: string) =>
+    api.post<{ user: { id: string; email: string; name: string } }>("/auth/register", {
+      email,
+      password,
+      name,
+    }),
+  signIn: (email: string, password: string) =>
+    api.post<{ user: { id: string; email: string; name: string } }>("/auth/login", {
+      email,
+      password,
+    }),
+  // Passkey Auth
+  registerStart: () =>
+    api.post<{ user: { id: string; name: string; email: string | null } }>("/auth/passkey/register-start", {}),
+  passkeyRegisterOptions: () =>
+    api.get<PublicKeyCredentialCreationOptionsJSON>("/auth/passkey/generate-register-options"),
+  passkeyRegister: (credential: RegistrationResponseJSON) =>
+    api.post<{ user: { id: string; name: string } }>("/auth/passkey/verify-registration", credential),
+  passkeyLoginOptions: () =>
+    api.get<PublicKeyCredentialRequestOptionsJSON>("/auth/passkey/generate-authenticate-options"),
+  passkeyLogin: (credential: AuthenticationResponseJSON) =>
+    api.post<{ user: { id: string; name: string } }>("/auth/passkey/verify-authentication", credential),
 };
 
 export const aiApi = {

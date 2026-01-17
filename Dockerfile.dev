@@ -1,0 +1,19 @@
+FROM oven/bun:1-debian
+
+WORKDIR /app
+
+# Install wget for healthchecks
+RUN apt-get update && \
+    apt-get install -y wget && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install dependencies (will be cached unless package.json changes)
+COPY package.json bun.lock* ./
+RUN bun install
+
+# Source code will be mounted as volume
+# Vite dev server started via docker-compose command
+
+EXPOSE 5173
+
+CMD ["bun", "dev", "--host", "0.0.0.0"]
